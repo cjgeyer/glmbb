@@ -3,6 +3,11 @@
 \alias{crabs}
 \title{Horseshoe Crab Mating Data}
 \usage{crabs}
+\description{
+  Data on horseshoe crabs (\emph{Limulus polyphemus}).  Response
+  is number of males surrounding a breeding female, color (factor), condition
+  (factor), weight (quantitative), and width (quantitative) of the female.
+}
 \format{
   A data frame with 173 observations on 6 variables.
   Individuals (rows of the data frame) are female horseshoe crabs.
@@ -25,7 +30,7 @@
   \item{y}{shorthand for \code{as.numeric(satell > 0)}.}
   }
 }
-\description{
+\details{
 Quoting from the abstract of Brockmann (1996). \dQuote{Horseshoe crabs
 arrive on the beach in pairs and spawn \ldots during \ldots high tides.
 Unattached males also come to the beach, crowd around the nesting couples

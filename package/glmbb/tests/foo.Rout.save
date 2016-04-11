@@ -1,7 +1,7 @@
 
-R version 3.2.4 (2016-03-10) -- "Very Secure Dishes"
-Copyright (C) 2016 The R Foundation for Statistical Computing
-Platform: i686-pc-linux-gnu (32-bit)
+R version 3.2.3 (2015-12-10) -- "Wooden Christmas-Tree"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -43,174 +43,95 @@ Warning messages:
 >  names(criteria) <- NULL
 >  names(formulae) <- NULL
 >  criteria <- unlist(criteria)
->  criteria
-  [1] 906.2615 906.9464 897.4502 972.4368 969.4908 900.1454 900.1722 896.9920
-  [9] 915.4448 897.2368 896.8724 902.3989 897.3034 915.0896 898.6678 953.1656
- [17] 915.7002 899.7599 918.8643 904.6159 900.6301 906.7584 902.3045 905.7717
- [25] 896.3546 899.7413 900.4542 901.1794 899.8451 901.3461 918.6780 895.5158
- [33] 916.3215 900.6811 902.6540 900.7588 916.4686 905.2517 914.8385 901.3480
- [41] 899.0153 902.6887 902.1856 903.9146 902.9771 906.7094 895.8019 920.8833
- [49] 919.0001 898.4414 990.0893 903.6404 924.6425 902.9670 912.3787 898.1885
- [57] 899.0550 927.9272 901.1290 906.0947 913.0706 910.7861 897.7957 900.2131
- [65] 907.2480 900.5091 911.7577 922.6267 906.6381 900.2194 904.5828 904.0089
- [73] 917.3659 902.9429 900.0586 905.2614 903.5439 900.3814 903.7620 905.2725
- [81] 894.3717 899.7204 915.8872 906.0509 897.4383 906.1485 899.8308 896.8069
- [89] 903.5396 907.2992 901.2306 897.0421 908.8964 913.4088 899.3480 899.9891
- [97] 913.4774 900.6349 911.6905 899.6955 901.3955
 >  formulae <- lapply(formulae, tidy.formula.hierarchical)
 >  formulae <- sapply(formulae, deparse, width.cutoff = 500)
->  formulae
-  [1] "satell ~ color * weight + spine * weight + color * spine * width"                                         
-  [2] "satell ~ color * spine * weight + spine * width * weight"                                                 
-  [3] "satell ~ color * spine + color * width + spine * weight"                                                  
-  [4] "satell ~ color"                                                                                           
-  [5] "satell ~ color + spine"                                                                                   
-  [6] "satell ~ color * spine * width + color * spine * weight"                                                  
-  [7] "satell ~ color * spine + color * width + spine * width + spine * weight"                                  
-  [8] "satell ~ color * spine + width * weight"                                                                  
-  [9] "satell ~ color * width + spine * width + color * weight"                                                  
- [10] "satell ~ color * spine + spine * weight + width * weight"                                                 
- [11] "satell ~ color * spine * width + color * spine * weight + color * width * weight"                         
- [12] "satell ~ color * spine + spine * width + color * weight + spine * weight"                                 
- [13] "satell ~ color * spine + color * width + spine * weight + width * weight"                                 
- [14] "satell ~ spine + color * width + color * weight"                                                          
- [15] "satell ~ weight + color * spine + spine * width"                                                          
- [16] "satell ~ color * spine"                                                                                   
- [17] "satell ~ color * spine * width"                                                                           
- [18] "satell ~ color * spine * weight + color * width * weight"                                                 
- [19] "satell ~ color * width"                                                                                   
- [20] "satell ~ color * spine + color * width * weight + spine * width * weight"                                 
- [21] "satell ~ color * spine + spine * width + spine * weight + color * width * weight"                         
- [22] "satell ~ color * spine * weight + color * width * weight + spine * width * weight"                        
- [23] "satell ~ weight + color * spine * width"                                                                  
- [24] "satell ~ width + weight + color * spine"                                                                  
- [25] "satell ~ color * spine + spine * weight"                                                                  
- [26] "satell ~ color * spine + color * weight + spine * weight + width * weight"                                
- [27] "satell ~ color * spine + color * weight"                                                                  
- [28] "satell ~ width + color * spine * weight"                                                                  
- [29] "satell ~ color * spine * weight"                                                                          
- [30] "satell ~ width * weight + color * spine * weight"                                                         
- [31] "satell ~ color + width + weight"                                                                          
- [32] "satell ~ color * spine * width + color * width * weight + spine * width * weight"                         
- [33] "satell ~ color * weight + spine * width * weight"                                                         
- [34] "satell ~ color * spine * width + color * width * weight"                                                  
- [35] "satell ~ color * spine + color * width + color * weight + spine * weight"                                 
- [36] "satell ~ color * spine + color * width + color * weight + width * weight"                                 
- [37] "satell ~ width + color * spine"                                                                           
- [38] "satell ~ color * spine + color * width + spine * width + color * weight + spine * weight"                 
- [39] "satell ~ color * width + color * weight"                                                                  
- [40] "satell ~ color * spine * width * weight"                                                                  
- [41] "satell ~ color * spine + color * weight + spine * weight"                                                 
- [42] "satell ~ color * spine + color * width + color * weight + spine * weight + width * weight"                
- [43] "satell ~ width + color * spine + color * weight"                                                          
- [44] "satell ~ weight + color * spine"                                                                          
- [45] "satell ~ color * width + color * spine * weight"                                                          
- [46] "satell ~ spine * weight + color * width * weight"                                                         
- [47] "satell ~ color * spine + color * width + width * weight"                                                  
- [48] "satell ~ color + spine + width + weight"                                                                  
- [49] "satell ~ color + spine + weight"                                                                          
- [50] "satell ~ color * spine + color * width + spine * width + width * weight"                                  
- [51] "satell ~ 1"                                                                                               
- [52] "satell ~ color * width + width * weight + color * spine * weight"                                         
- [53] "satell ~ color + width"                                                                                   
- [54] "satell ~ color * spine * width + color * spine * weight + spine * width * weight"                         
- [55] "satell ~ color * weight"                                                                                  
- [56] "satell ~ color * spine + spine * weight + color * width * weight"                                         
- [57] "satell ~ color * weight + color * spine * width + spine * width * weight"                                 
- [58] "satell ~ color + spine + width"                                                                           
- [59] "satell ~ color * spine + spine * width + color * weight"                                                  
- [60] "satell ~ color * width + spine * width + color * spine * weight"                                          
- [61] "satell ~ weight + color * width"                                                                          
- [62] "satell ~ color * width + spine * weight + width * weight"                                                 
- [63] "satell ~ color * spine + color * weight + width * weight"                                                 
- [64] "satell ~ width + color * spine + color * weight + spine * weight"                                         
- [65] "satell ~ color * weight + color * spine * width"                                                          
- [66] "satell ~ width * weight + color * spine * width + color * spine * weight"                                 
- [67] "satell ~ color * weight + spine * weight"                                                                 
- [68] "satell ~ color * width + spine * width"                                                                   
- [69] "satell ~ color * width + spine * width + width * weight + color * spine * weight"                         
- [70] "satell ~ color * spine + color * width + spine * width + spine * weight + width * weight"                 
- [71] "satell ~ color * spine + color * width + spine * width + color * weight"                                  
- [72] "satell ~ color * spine + color * width + color * weight"                                                  
- [73] "satell ~ spine * width * weight"                                                                          
- [74] "satell ~ color * spine + spine * width * weight"                                                          
- [75] "satell ~ weight + color * spine + color * width + spine * width"                                          
- [76] "satell ~ color * weight + width * weight + color * spine * width"                                         
- [77] "satell ~ color * width * weight"                                                                          
- [78] "satell ~ weight + color * spine + color * width"                                                          
- [79] "satell ~ color * spine + color * width + spine * width * weight"                                          
- [80] "satell ~ color * spine + color * width + spine * width + color * weight + spine * weight + width * weight"
- [81] "satell ~ color * spine * width + spine * width * weight"                                                  
- [82] "satell ~ color * spine + spine * width + color * width * weight"                                          
- [83] "satell ~ color * width + spine * width * weight"                                                          
- [84] "satell ~ color * weight + spine * weight + width * weight + color * spine * width"                        
- [85] "satell ~ width + color * spine + spine * weight"                                                          
- [86] "satell ~ color * width + width * weight"                                                                  
- [87] "satell ~ color * spine + spine * width + color * weight + width * weight"                                 
- [88] "satell ~ color * spine + color * width * weight"                                                          
- [89] "satell ~ color * spine + color * width + spine * width + color * weight + width * weight"                 
- [90] "satell ~ color * weight + width * weight"                                                                 
- [91] "satell ~ spine * weight + color * spine * width"                                                          
- [92] "satell ~ color * spine + spine * width + width * weight"                                                  
- [93] "satell ~ color * spine + color * width + color * weight + spine * width * weight"                         
- [94] "satell ~ spine + weight + color * width"                                                                  
- [95] "satell ~ color * spine * width + color * spine * weight + color * width * weight + spine * width * weight"
- [96] "satell ~ color * spine + spine * width + spine * weight"                                                  
- [97] "satell ~ weight + color * width + spine * width"                                                          
- [98] "satell ~ spine * weight + width * weight + color * spine * width"                                         
- [99] "satell ~ color * width * weight + spine * width * weight"                                                 
-[100] "satell ~ width * weight + color * spine * width"                                                          
-[101] "satell ~ spine * weight + color * spine * width + color * width * weight"                                 
 >  fred <- data.frame(criteria, formulae)
 >  fred <- fred[order(criteria), ]
->  fred[1:20, ]
-    criteria
-81  894.3717
-32  895.5158
-47  895.8019
-25  896.3546
-88  896.8069
-11  896.8724
-8   896.9920
-92  897.0421
-10  897.2368
-13  897.3034
-85  897.4383
-3   897.4502
-63  897.7957
-56  898.1885
-50  898.4414
-15  898.6678
-41  899.0153
-57  899.0550
-95  899.3480
-100 899.6955
-                                                                                                     formulae
-81                                                    satell ~ color * spine * width + spine * width * weight
-32                           satell ~ color * spine * width + color * width * weight + spine * width * weight
-47                                                    satell ~ color * spine + color * width + width * weight
-25                                                                    satell ~ color * spine + spine * weight
-88                                                            satell ~ color * spine + color * width * weight
-11                           satell ~ color * spine * width + color * spine * weight + color * width * weight
-8                                                                     satell ~ color * spine + width * weight
-92                                                    satell ~ color * spine + spine * width + width * weight
-10                                                   satell ~ color * spine + spine * weight + width * weight
-13                                   satell ~ color * spine + color * width + spine * weight + width * weight
-85                                                            satell ~ width + color * spine + spine * weight
-3                                                     satell ~ color * spine + color * width + spine * weight
-63                                                   satell ~ color * spine + color * weight + width * weight
-56                                           satell ~ color * spine + spine * weight + color * width * weight
-50                                    satell ~ color * spine + color * width + spine * width + width * weight
-15                                                            satell ~ weight + color * spine + spine * width
-41                                                   satell ~ color * spine + color * weight + spine * weight
-57                                   satell ~ color * weight + color * spine * width + spine * width * weight
-95  satell ~ color * spine * width + color * spine * weight + color * width * weight + spine * width * weight
-100                                                           satell ~ width * weight + color * spine * width
+>  opt <- options(width = 132)
+>  print(fred[1:20, ], right = FALSE)
+    criteria formulae                                                                                                 
+81  894.3717 satell ~ color * spine * width + spine * width * weight                                                  
+32  895.5158 satell ~ color * spine * width + color * width * weight + spine * width * weight                         
+47  895.8019 satell ~ color * spine + color * width + width * weight                                                  
+25  896.3546 satell ~ color * spine + spine * weight                                                                  
+88  896.8069 satell ~ color * spine + color * width * weight                                                          
+11  896.8724 satell ~ color * spine * width + color * spine * weight + color * width * weight                         
+8   896.9920 satell ~ color * spine + width * weight                                                                  
+92  897.0421 satell ~ color * spine + spine * width + width * weight                                                  
+10  897.2368 satell ~ color * spine + spine * weight + width * weight                                                 
+13  897.3034 satell ~ color * spine + color * width + spine * weight + width * weight                                 
+85  897.4383 satell ~ width + color * spine + spine * weight                                                          
+3   897.4502 satell ~ color * spine + color * width + spine * weight                                                  
+63  897.7957 satell ~ color * spine + color * weight + width * weight                                                 
+56  898.1885 satell ~ color * spine + spine * weight + color * width * weight                                         
+50  898.4414 satell ~ color * spine + color * width + spine * width + width * weight                                  
+15  898.6678 satell ~ weight + color * spine + spine * width                                                          
+41  899.0153 satell ~ color * spine + color * weight + spine * weight                                                 
+57  899.0550 satell ~ color * weight + color * spine * width + spine * width * weight                                 
+95  899.3480 satell ~ color * spine * width + color * spine * weight + color * width * weight + spine * width * weight
+100 899.6955 satell ~ width * weight + color * spine * width                                                          
+>  options(opt)
+> 
+>  # check criteria
+>  criteria.too <- Map(function(x) get(x, envir = gout$envir)$aic, fits)
+>  names(criteria.too) <- NULL
+>  criteria.too <- unlist(criteria.too)
+>  identical(criteria, criteria.too)
+[1] TRUE
 > 
 >  gout <- glmbb(satell ~ color * spine * width * weight,
-+      family = poisson, data = crabs, criterion = "BIC")
++      family = poisson, data = crabs, criterion = "BIC", cutoff = 10)
+Warning message:
+glm.fit: fitted rates numerically 0 occurred 
+> 
+>  fits <- ls(envir = gout$envir, pattern = "^sha1")
+>  length(fits)
+[1] 135
+>  criteria <- Map(function(x) get(x, envir = gout$envir)$criterion, fits)
+>  formulae <- Map(function(x) get(x, envir = gout$envir)$formula, fits)
+>  names(criteria) <- NULL
+>  names(formulae) <- NULL
+>  criteria <- unlist(criteria)
+>  formulae <- lapply(formulae, tidy.formula.hierarchical)
+>  formulae <- sapply(formulae, deparse, width.cutoff = 500)
+>  fred <- data.frame(criteria, formulae)
+>  fred <- fred[order(criteria), ]
+>  print(fred[fred$criteria <= min(fred$criteria) + gout$cutoff, ], right = FALSE)
+    criteria formulae                       
+68  921.2009 satell ~ width * weight        
+130 926.4707 satell ~ weight                
+11  929.5306 satell ~ color + width * weight
+128 930.0982 satell ~ spine + width * weight
+84  930.6581 satell ~ width + weight        
+> 
+>  # check criteria
+>  criteria.too <- Map(function(x) BIC(get(x, envir = gout$envir)), fits)
+>  names(criteria.too) <- NULL
+>  criteria.too <- unlist(criteria.too)
+>  identical(criteria, criteria.too)
+[1] TRUE
+> 
+>  # now AICc
+> 
+>  gout <- glmbb(satell ~ color * spine * width * weight,
++      family = poisson, data = crabs, criterion = "AICc", cutoff = 5)
+Warning messages:
+1: glm.fit: fitted rates numerically 0 occurred 
+2: glm.fit: fitted rates numerically 0 occurred 
+3: glm.fit: fitted rates numerically 0 occurred 
+4: glm.fit: fitted rates numerically 0 occurred 
+>  fits <- ls(envir = gout$envir, pattern = "^sha1")
+>  criteria <- Map(function(x) get(x, envir = gout$envir)$criterion, fits)
+>  criteria.too <- Map(function(x) get(x, envir = gout$envir)$aic, fits)
+>  p.too <- Map(function(x)
++      sum(! is.na(get(x, envir = gout$envir)$coefficients)), fits)
+>  n <- nrow(crabs)
+>  criteria.too <- Map(function(x, p) x + 2 * p * (p + 1) / (n - p - 1),
++      criteria.too, p.too)
+>  all.equal(criteria, criteria.too)
+[1] TRUE
 > 
 > 
 > proc.time()
    user  system elapsed 
-  3.184   0.052   3.236 
+  2.282   0.018   2.352 

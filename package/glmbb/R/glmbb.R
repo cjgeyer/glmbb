@@ -94,8 +94,7 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
             if (criterion == "AICc") {
                 o$criterion.deviance <- aic - 2 * p
                 o$criterion.penalty <- 2 * p + 2 * p * (p + 1) / (n - p - 1)
-                o$criterion.penalty <- o$criterion.deviance +
-                    o$criterion.penalty
+                o$criterion <- o$criterion.deviance + o$criterion.penalty
             }
             assign(xkey, o, e)
             if (e$min.crit > o$criterion) e$min.crit <- o$criterion

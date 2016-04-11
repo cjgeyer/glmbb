@@ -10,7 +10,7 @@ tidy.formula.hierarchical(formula)
   effects involving the same variables are in the model.
 }
 \arguments{
-  \item{formula}{an object of class \code{"\link{stats}{formula}"}.}
+  \item{formula}{an object of class \code{"\link[stats]{formula}"}.}
 }
 \value{
   Another formula.
