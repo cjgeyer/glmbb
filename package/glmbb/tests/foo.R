@@ -4,13 +4,11 @@
 
  gout <- glm(satell ~ color * spine * width * weight, family = poisson,
      data = crabs)
-
  sum(! is.na(gout$coefficients))
  gout <- glm(satell ~ 1, family = poisson, data = crabs)
  sum(! is.na(gout$coefficients))
 
- gout <- glmbb(satell ~ color * spine * width * weight,
-     family = poisson, data = crabs)
+ gout <- glmbb(satell ~ color * spine * width * weight, data = crabs)
 
  fits <- ls(envir = gout$envir, pattern = "^sha1")
  length(fits)

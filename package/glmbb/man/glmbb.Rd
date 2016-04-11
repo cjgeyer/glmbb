@@ -85,7 +85,8 @@ glmbb(big, little = ~ 1, family = poisson, data,
   \code{link{stats}{glm}},
 }
 \examples{
-2 + 2
+data(crabs)
+gout <- glmbb(satell ~ (color + spine + width + weight)^3, data = crabs)
 }
 \keyword{models}
 \keyword{regression}

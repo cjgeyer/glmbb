@@ -21,15 +21,13 @@ Type 'q()' to quit R.
 > 
 >  gout <- glm(satell ~ color * spine * width * weight, family = poisson,
 +      data = crabs)
-> 
 >  sum(! is.na(gout$coefficients))
 [1] 36
 >  gout <- glm(satell ~ 1, family = poisson, data = crabs)
 >  sum(! is.na(gout$coefficients))
 [1] 1
 > 
->  gout <- glmbb(satell ~ color * spine * width * weight,
-+      family = poisson, data = crabs)
+>  gout <- glmbb(satell ~ color * spine * width * weight, data = crabs)
 Warning messages:
 1: glm.fit: fitted rates numerically 0 occurred 
 2: glm.fit: fitted rates numerically 0 occurred 
@@ -215,4 +213,4 @@ Warning messages:
 > 
 > proc.time()
    user  system elapsed 
-  3.196   0.044   3.246 
+  3.184   0.052   3.236 
