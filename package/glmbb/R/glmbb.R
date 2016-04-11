@@ -71,7 +71,7 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
         tl <- attr(mt, "term.labels")
         stl <- standardize.term.labels(tl)
         if (length(stl) == 0) stl <- "1"
-        xhash <- sha1(stl)
+        xhash <- digest(stl, algo = "sha1")
         xkey <- paste("sha1", xhash, sep = ".")
         if (exists(xkey, e)) {
             o <- get(xkey, e)
