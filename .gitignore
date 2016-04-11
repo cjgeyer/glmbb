@@ -1,4 +1,8 @@
 *.Rcheck
 *.tar.gz
 *.Rout
-*.Rout.save
+*.tex
+*.aux
+*.log
+*.dvi
+*.pdf

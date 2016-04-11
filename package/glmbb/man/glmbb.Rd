@@ -3,7 +3,7 @@
 \title{All Hierarchical Models for GLM via Branch and Bound}
 \usage{
 glmbb(big, little = ~ 1, family = poisson, data,
-    criterion = c("AIC", "AICc", "BIC"), cutoff = 0, \dots) 
+    criterion = c("AIC", "AICc", "BIC"), cutoff = 0, trace = FALSE, \dots)
 }
 \description{
   Find all hierarchical models of specified GLM with
@@ -44,6 +44,8 @@ glmbb(big, little = ~ 1, family = poisson, data,
     hierarchical models that are submodels of \code{big} and supermodels of
     \code{little} with information criterion less than or equal to the
     cutoff plus the minimum information criterion over all these models.}
+
+  \item{trace}{logical.  Emit debug info if \code{TRUE}.}
 
   \item{\dots}{additional named or unnamed arguments to be passed
     to \code{stats}{glm.fit}.}

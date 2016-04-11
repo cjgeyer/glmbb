@@ -1,3 +1,5 @@
 export(glmbb)
-importFrom(stats, glm.fit)
+export(tidy.formula.hierarchical)
+importFrom(stats, lm, glm, terms, terms.formula)
+importFrom(stats, AIC, BIC, as.formula, poisson, update)
 importFrom(digest, sha1)
