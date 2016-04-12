@@ -4,7 +4,7 @@ tidy.formula.hierarchical <- function(formula) {
     if(! is.hierarchical(mt))
        stop("formula not hierarchical")
     mf <- attr(mt, "factors")
-    if (! is.matrix(mf)) return(formula)
+    if (! is.matrix(mf)) return(deparse(formula))
     new.terms <- NULL
     variables <- rownames(mf)
     ok <- rep(TRUE, ncol(mf))
@@ -26,8 +26,7 @@ tidy.formula.hierarchical <- function(formula) {
     mr <- attr(mt, "response")
     if (mr != 0)
         new.formula <- paste(variables[mr], new.formula)
-    new.formula <- as.formula(new.formula)
-    mt.new <- terms(new.formula)
+    mt.new <- terms(as.formula(new.formula))
     mf.new <- attr(mt.new, "factors")
     mr.new <- attr(mt.new, "response")
     mi.new <- attr(mt.new, "intercept")

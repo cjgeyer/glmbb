@@ -13,7 +13,7 @@ tidy.formula.hierarchical(formula)
   \item{formula}{an object of class \code{"\link[stats]{formula}"}.}
 }
 \value{
-  Another formula.
+  A character string coercible to a formula equivalent to the input.
 }
 \examples{
 tidy.formula.hierarchical(y ~ u + v + w + u:v + u:w + v:w + u:v:w)

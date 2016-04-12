@@ -1,7 +1,7 @@
 
-R version 3.2.3 (2015-12-10) -- "Wooden Christmas-Tree"
-Copyright (C) 2015 The R Foundation for Statistical Computing
-Platform: x86_64-pc-linux-gnu (64-bit)
+R version 3.2.4 (2016-03-10) -- "Very Secure Dishes"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: i686-pc-linux-gnu (32-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -27,6 +27,8 @@ Type 'q()' to quit R.
 >  sum(! is.na(gout$coefficients))
 [1] 1
 > 
+>  # default criterion AIC
+> 
 >  gout <- glmbb(satell ~ color * spine * width * weight, data = crabs)
 Warning messages:
 1: glm.fit: fitted rates numerically 0 occurred 
@@ -37,39 +39,89 @@ Warning messages:
 > 
 >  fits <- ls(envir = gout$envir, pattern = "^sha1")
 >  length(fits)
-[1] 101
+[1] 141
 >  criteria <- Map(function(x) get(x, envir = gout$envir)$criterion, fits)
 >  formulae <- Map(function(x) get(x, envir = gout$envir)$formula, fits)
 >  names(criteria) <- NULL
 >  names(formulae) <- NULL
 >  criteria <- unlist(criteria)
->  formulae <- lapply(formulae, tidy.formula.hierarchical)
->  formulae <- sapply(formulae, deparse, width.cutoff = 500)
->  fred <- data.frame(criteria, formulae)
+>  formulae <- sapply(formulae, tidy.formula.hierarchical)
+>  fred <- data.frame(criteria, formulae, stringsAsFactors = FALSE)
 >  fred <- fred[order(criteria), ]
+>  fred <- fred[fred$criteria <= min(fred$criteria) + gout$cutoff, ]
+>  w <- fred$criteria
+>  w <- w - w[1]
+>  w <- exp(- w / 2)
+>  w <- w / sum(w)
+>  fred <- data.frame(criterion = fred$criteria, weight = w,
++      formula = fred$formulae, stringsAsFactors = FALSE)
 >  opt <- options(width = 132)
->  print(fred[1:20, ], right = FALSE)
-    criteria formulae                                                                                                 
-81  894.3717 satell ~ color * spine * width + spine * width * weight                                                  
-32  895.5158 satell ~ color * spine * width + color * width * weight + spine * width * weight                         
-47  895.8019 satell ~ color * spine + color * width + width * weight                                                  
-25  896.3546 satell ~ color * spine + spine * weight                                                                  
-88  896.8069 satell ~ color * spine + color * width * weight                                                          
-11  896.8724 satell ~ color * spine * width + color * spine * weight + color * width * weight                         
-8   896.9920 satell ~ color * spine + width * weight                                                                  
-92  897.0421 satell ~ color * spine + spine * width + width * weight                                                  
-10  897.2368 satell ~ color * spine + spine * weight + width * weight                                                 
-13  897.3034 satell ~ color * spine + color * width + spine * weight + width * weight                                 
-85  897.4383 satell ~ width + color * spine + spine * weight                                                          
-3   897.4502 satell ~ color * spine + color * width + spine * weight                                                  
-63  897.7957 satell ~ color * spine + color * weight + width * weight                                                 
-56  898.1885 satell ~ color * spine + spine * weight + color * width * weight                                         
-50  898.4414 satell ~ color * spine + color * width + spine * width + width * weight                                  
-15  898.6678 satell ~ weight + color * spine + spine * width                                                          
-41  899.0153 satell ~ color * spine + color * weight + spine * weight                                                 
-57  899.0550 satell ~ color * weight + color * spine * width + spine * width * weight                                 
-95  899.3480 satell ~ color * spine * width + color * spine * weight + color * width * weight + spine * width * weight
-100 899.6955 satell ~ width * weight + color * spine * width                                                          
+>  print(fred, right = FALSE, row.names = FALSE, print.gap = 2)
+  criterion  weight        formula                                                                                  
+  894.3717   0.1453384985  satell ~ color*spine*width + spine*width*weight                                          
+  895.5158   0.0820222126  satell ~ color*spine*width + color*width*weight + spine*width*weight                     
+  895.8019   0.0710914889  satell ~ color*spine + color*width + width*weight                                        
+  896.3546   0.0539256048  satell ~ color*spine + spine*weight                                                      
+  896.8069   0.0430104842  satell ~ color*spine + color*width*weight                                                
+  896.8724   0.0416253123  satell ~ color*spine*width + color*spine*weight + color*width*weight                     
+  896.9920   0.0392086644  satell ~ color*spine + width*weight                                                      
+  897.0421   0.0382400308  satell ~ color*spine + spine*width + width*weight                                        
+  897.2368   0.0346914597  satell ~ color*spine + spine*weight + width*weight                                       
+  897.3034   0.0335554255  satell ~ color*spine + color*width + spine*weight + width*weight                         
+  897.4383   0.0313678836  satell ~ width + color*spine + spine*weight                                              
+  897.4502   0.0311809683  satell ~ color*spine + color*width + spine*weight                                        
+  897.7957   0.0262344918  satell ~ color*spine + color*weight + width*weight                                       
+  898.1885   0.0215559653  satell ~ color*spine + spine*weight + color*width*weight                                 
+  898.4414   0.0189955058  satell ~ color*spine + color*width + spine*width + width*weight                          
+  898.6678   0.0169626590  satell ~ weight + color*spine + spine*width                                              
+  899.0153   0.0142572951  satell ~ color*spine + color*weight + spine*weight                                       
+  899.0550   0.0139768096  satell ~ color*weight + color*spine*width + spine*width*weight                           
+  899.2803   0.0124878264  satell ~ color*spine + spine*width + spine*weight + width*weight                         
+  899.3480   0.0120724198  satell ~ color*spine*width + color*spine*weight + color*width*weight + spine*width*weight
+  899.6955   0.0101466201  satell ~ width*weight + color*spine*width                                                
+  899.7204   0.0100212858  satell ~ color*spine + spine*width + color*width*weight                                  
+  899.7413   0.0099169483  satell ~ color*spine + color*weight + spine*weight + width*weight                        
+  899.7599   0.0098253181  satell ~ color*spine*weight + color*width*weight                                         
+  899.8308   0.0094829004  satell ~ color*spine + spine*width + color*weight + width*weight                         
+  899.8451   0.0094154788  satell ~ color*spine*weight                                                              
+  899.9891   0.0087612952  satell ~ color*spine + spine*width + spine*weight                                        
+  900.0586   0.0084622489  satell ~ weight + color*spine + color*width + spine*width                                
+  900.1454   0.0081028189  satell ~ color*spine*width + color*spine*weight                                          
+  900.1722   0.0079951320  satell ~ color*spine + color*width + spine*width + spine*weight                          
+  900.2131   0.0078329882  satell ~ width + color*spine + color*weight + spine*weight                               
+  900.2194   0.0078084370  satell ~ color*spine + color*width + spine*width + spine*weight + width*weight           
+  900.3814   0.0072010266  satell ~ weight + color*spine + color*width                                              
+  900.4542   0.0069436636  satell ~ color*spine + color*weight                                                      
+  900.5091   0.0067554243  satell ~ width*weight + color*spine*width + color*spine*weight                           
+  900.6301   0.0063588720  satell ~ color*spine + spine*width + spine*weight + color*width*weight                   
+  900.6349   0.0063435477  satell ~ spine*weight + width*weight + color*spine*width                                 
+  900.6811   0.0061989923  satell ~ color*spine*width + color*width*weight                                          
+  900.7588   0.0059625429  satell ~ color*spine + color*width + color*weight + width*weight                         
+  901.1290   0.0049550396  satell ~ color*spine + spine*width + color*weight                                        
+  901.1794   0.0048316864  satell ~ width + color*spine*weight                                                      
+  901.2306   0.0047097195  satell ~ spine*weight + color*spine*width                                                
+  901.3461   0.0044453470  satell ~ width*weight + color*spine*weight                                               
+  901.3480   0.0044411947  satell ~ color*spine*width*weight                                                        
+  901.3955   0.0043369183  satell ~ spine*weight + color*spine*width + color*width*weight                           
+  901.4959   0.0041245641  satell ~ color*spine + spine*width + color*weight + spine*weight + width*weight          
+  902.1856   0.0029215329  satell ~ width + color*spine + color*weight                                              
+  902.3045   0.0027529309  satell ~ weight + color*spine*width                                                      
+  902.3989   0.0026259610  satell ~ color*spine + spine*width + color*weight + spine*weight                         
+  902.6540   0.0023115121  satell ~ color*spine + color*width + color*weight + spine*weight                         
+  902.6887   0.0022718034  satell ~ color*spine + color*width + color*weight + spine*weight + width*weight          
+  902.7721   0.0021790082  satell ~ spine*width + color*spine*weight + color*width*weight                           
+  902.9429   0.0020006266  satell ~ color*spine + spine*width*weight                                                
+  902.9670   0.0019766797  satell ~ color*spine*width + color*spine*weight + spine*width*weight                     
+  902.9771   0.0019667565  satell ~ color*width + color*spine*weight                                                
+  903.4752   0.0015331632  satell ~ spine*width + width*weight + color*spine*weight                                 
+  903.5396   0.0014845317  satell ~ color*spine + color*width + spine*width + color*weight + width*weight           
+  903.5439   0.0014813705  satell ~ color*width*weight                                                              
+  903.6404   0.0014115838  satell ~ color*width + width*weight + color*spine*weight                                 
+  903.7620   0.0013283298  satell ~ color*spine + color*width + spine*width*weight                                  
+  903.9146   0.0012307232  satell ~ weight + color*spine                                                            
+  903.9880   0.0011863706  satell ~ spine*width + color*spine*weight                                                
+  904.0089   0.0011740501  satell ~ color*spine + color*width + color*weight                                        
+  904.3661   0.0009820488  satell ~ spine + color*width*weight                                                      
 >  options(opt)
 > 
 >  # check criteria
@@ -79,8 +131,10 @@ Warning messages:
 >  identical(criteria, criteria.too)
 [1] TRUE
 > 
+>  # now BIC
+> 
 >  gout <- glmbb(satell ~ color * spine * width * weight,
-+      family = poisson, data = crabs, criterion = "BIC", cutoff = 10)
++      family = poisson, data = crabs, criterion = "BIC")
 Warning message:
 glm.fit: fitted rates numerically 0 occurred 
 > 
@@ -92,17 +146,23 @@ glm.fit: fitted rates numerically 0 occurred
 >  names(criteria) <- NULL
 >  names(formulae) <- NULL
 >  criteria <- unlist(criteria)
->  formulae <- lapply(formulae, tidy.formula.hierarchical)
->  formulae <- sapply(formulae, deparse, width.cutoff = 500)
->  fred <- data.frame(criteria, formulae)
+>  formulae <- sapply(formulae, tidy.formula.hierarchical)
+>  fred <- data.frame(criteria, formulae, stringsAsFactors = FALSE)
 >  fred <- fred[order(criteria), ]
->  print(fred[fred$criteria <= min(fred$criteria) + gout$cutoff, ], right = FALSE)
-    criteria formulae                       
-68  921.2009 satell ~ width * weight        
-130 926.4707 satell ~ weight                
-11  929.5306 satell ~ color + width * weight
-128 930.0982 satell ~ spine + width * weight
-84  930.6581 satell ~ width + weight        
+>  fred <- fred[fred$criteria <= min(fred$criteria) + gout$cutoff, ]
+>  w <- fred$criteria
+>  w <- w - w[1]
+>  w <- exp(- w / 2)
+>  w <- w / sum(w)
+>  fred <- data.frame(criterion = fred$criteria, weight = w,
++      formula = fred$formulae, stringsAsFactors = FALSE)
+>  print(fred, right = FALSE, row.names = FALSE, print.gap = 2)
+  criterion  weight       formula                      
+  921.2009   0.902697702  satell ~ width*weight        
+  926.4707   0.064746887  satell ~ weight              
+  929.5306   0.014020638  satell ~ color + width*weight
+  930.0982   0.010556291  satell ~ spine + width*weight
+  930.6581   0.007978481  satell ~ width + weight      
 > 
 >  # check criteria
 >  criteria.too <- Map(function(x) BIC(get(x, envir = gout$envir)), fits)
@@ -134,4 +194,4 @@ Warning messages:
 > 
 > proc.time()
    user  system elapsed 
-  2.282   0.018   2.352 
+  6.296   0.044   6.343 

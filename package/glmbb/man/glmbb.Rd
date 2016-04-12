@@ -3,7 +3,7 @@
 \title{All Hierarchical Models for GLM via Branch and Bound}
 \usage{
 glmbb(big, little = ~ 1, family = poisson, data,
-    criterion = c("AIC", "AICc", "BIC"), cutoff = 0, trace = FALSE, \dots)
+    criterion = c("AIC", "AICc", "BIC"), cutoff = 10, trace = FALSE, \dots)
 }
 \description{
   Find all hierarchical models of specified GLM with

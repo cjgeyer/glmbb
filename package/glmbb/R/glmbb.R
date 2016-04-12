@@ -1,5 +1,5 @@
 glmbb <- function(big, little = ~ 1, family = poisson, data,
-    criterion = c("AIC", "AICc", "BIC"), cutoff = 0, trace = FALSE, ...) {
+    criterion = c("AIC", "AICc", "BIC"), cutoff = 10, trace = FALSE, ...) {
 
     criterion <- match.arg(criterion)
 

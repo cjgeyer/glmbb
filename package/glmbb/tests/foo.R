@@ -8,6 +8,8 @@
  gout <- glm(satell ~ 1, family = poisson, data = crabs)
  sum(! is.na(gout$coefficients))
 
+ # default criterion AIC
+
  gout <- glmbb(satell ~ color * spine * width * weight, data = crabs)
 
  fits <- ls(envir = gout$envir, pattern = "^sha1")
@@ -17,12 +19,18 @@
  names(criteria) <- NULL
  names(formulae) <- NULL
  criteria <- unlist(criteria)
- formulae <- lapply(formulae, tidy.formula.hierarchical)
- formulae <- sapply(formulae, deparse, width.cutoff = 500)
- fred <- data.frame(criteria, formulae)
+ formulae <- sapply(formulae, tidy.formula.hierarchical)
+ fred <- data.frame(criteria, formulae, stringsAsFactors = FALSE)
  fred <- fred[order(criteria), ]
+ fred <- fred[fred$criteria <= min(fred$criteria) + gout$cutoff, ]
+ w <- fred$criteria
+ w <- w - w[1]
+ w <- exp(- w / 2)
+ w <- w / sum(w)
+ fred <- data.frame(criterion = fred$criteria, weight = w,
+     formula = fred$formulae, stringsAsFactors = FALSE)
  opt <- options(width = 132)
- print(fred[1:20, ], right = FALSE)
+ print(fred, right = FALSE, row.names = FALSE, print.gap = 2)
  options(opt)
 
  # check criteria
@@ -31,8 +39,10 @@
  criteria.too <- unlist(criteria.too)
  identical(criteria, criteria.too)
 
+ # now BIC
+
  gout <- glmbb(satell ~ color * spine * width * weight,
-     family = poisson, data = crabs, criterion = "BIC", cutoff = 10)
+     family = poisson, data = crabs, criterion = "BIC")
 
  fits <- ls(envir = gout$envir, pattern = "^sha1")
  length(fits)
@@ -41,11 +51,17 @@
  names(criteria) <- NULL
  names(formulae) <- NULL
  criteria <- unlist(criteria)
- formulae <- lapply(formulae, tidy.formula.hierarchical)
- formulae <- sapply(formulae, deparse, width.cutoff = 500)
- fred <- data.frame(criteria, formulae)
+ formulae <- sapply(formulae, tidy.formula.hierarchical)
+ fred <- data.frame(criteria, formulae, stringsAsFactors = FALSE)
  fred <- fred[order(criteria), ]
- print(fred[fred$criteria <= min(fred$criteria) + gout$cutoff, ], right = FALSE)
+ fred <- fred[fred$criteria <= min(fred$criteria) + gout$cutoff, ]
+ w <- fred$criteria
+ w <- w - w[1]
+ w <- exp(- w / 2)
+ w <- w / sum(w)
+ fred <- data.frame(criterion = fred$criteria, weight = w,
+     formula = fred$formulae, stringsAsFactors = FALSE)
+ print(fred, right = FALSE, row.names = FALSE, print.gap = 2)
 
  # check criteria
  criteria.too <- Map(function(x) BIC(get(x, envir = gout$envir)), fits)

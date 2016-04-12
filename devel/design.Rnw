@@ -44,9 +44,9 @@ We say models $m_1$ and $m_2$ are \emph{nested} if every term in $m_1$
 appears in $m_2$ and, if $m_1$ has an intercept, then either $m_2$
 has an intercept or it has a categorical predictor (so intercepts
 are irrelevant).
-By ``term'' here we mean what the terms object is calling a terms,
-corresponding to columns of the \texttt{"factors"} attribute (if any)
-or to components of the \texttt{term.labels} attribute.
+By ``term'' here we mean what the terms object is calling a term,
+corresponding to a column of the \texttt{"factors"} attribute (if any)
+or to a component of the \texttt{term.labels} attribute.
 By ``categorical'' variable we mean what R calls a variable of class
 \texttt{"factor"}.
 
