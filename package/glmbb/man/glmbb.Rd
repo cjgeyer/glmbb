@@ -72,7 +72,15 @@ glmbb(big, little = ~ 1, family = poisson, data,
 
 }
 \value{
-  A list containing the following components:
+  An object of class \code{"glmbb"} containing at least the following
+  components:
+  \item{data}{the model frame, a data frame containing all the variables.}
+  \item{little}{the argument \code{little}.}
+  \item{big}{the argument \code{big}.}
+  \item{criterion}{the argument \code{criterion}.}
+  \item{cutoff}{the argument \code{cutoff}.}
+  \item{envir}{an R environment object containing all of the fits done.}
+  \item{min.crit}{the minimum value of the criterion.}
 }
 \references{
   Hand, D. J. (1981)

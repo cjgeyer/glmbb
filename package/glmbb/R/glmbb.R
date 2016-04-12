@@ -24,8 +24,8 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
     }
 
     stopifnot(is.numeric(cutoff))
-    stopifnot(is.finite(cutoff))
     stopifnot(length(cutoff) == 1)
+    stopifnot(! is.na(cutoff))
     stopifnot(cutoff >= 0)
 
     terms.big <- terms(big)
@@ -161,8 +161,9 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
 
     doit(little, big)
 
-    return(list(data = mf, little = little, big = big,
-        envir = e, min.crit = e$min.crit, cutoff = cutoff))
+    return(structure(list(data = mf, little = little, big = big,
+        criterion = criterion, cutoff = cutoff, envir = e,
+        min.crit = e$min.crit), class = "glmbb"))
 }
 
 is.hierarchical <- function(mt) {

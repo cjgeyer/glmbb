@@ -39,6 +39,26 @@
  criteria.too <- unlist(criteria.too)
  identical(criteria, criteria.too)
 
+ # check we do indeed have all less than cutoff
+
+ gout.full <- glmbb(satell ~ color * spine * width * weight,
+     data = crabs, cutoff = Inf)
+
+ fits <- ls(envir = gout$envir, pattern = "^sha1")
+ criteria <- Map(function(x) get(x, envir = gout$envir)$criterion, fits)
+ criteria <- unlist(criteria)
+ fits.full <- ls(envir = gout.full$envir, pattern = "^sha1")
+ criteria.full <- Map(function(x)
+     get(x, envir = gout.full$envir)$criterion, fits)
+ criteria.full <- unlist(criteria.full)
+ length(fits)
+ length(fits.full)
+ min(criteria) == min(criteria.full)
+ inies <- which(criteria.full <= min(criteria.full) + gout$cutoff)
+ idx <- match(names(criteria.full)[inies], names(criteria))
+ all(! is.na(idx))
+ all(criteria.full[inies] == criteria[idx])
+
  # now BIC
 
  gout <- glmbb(satell ~ color * spine * width * weight,
