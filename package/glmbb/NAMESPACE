@@ -1,5 +1,7 @@
 export(glmbb)
 export(tidy.formula.hierarchical)
+S3method(print, summary.glmbb)
+S3method(summary, glmbb)
 importFrom(stats, lm, glm, terms, terms.formula)
 importFrom(stats, AIC, BIC, as.formula, poisson, update)
 importFrom(digest, digest)

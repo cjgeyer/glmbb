@@ -103,3 +103,8 @@
      criteria.too, p.too)
  all.equal(criteria, criteria.too)
 
+ opt <- options(width = 132)
+ summary(gout)
+ summary(gout, cutoff = 2)
+ summary(gout, cutoff = 8)
+

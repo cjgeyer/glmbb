@@ -67,7 +67,7 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
     e$min.crit <- Inf
 
     fitter <- function(f) {
-        mt <- terms(f) 
+        mt <- terms(f)
         tl <- attr(mt, "term.labels")
         stl <- standardize.term.labels(tl)
         if (length(stl) == 0) stl <- "1"
@@ -191,4 +191,74 @@ standardize.term.labels <- function(foo) {
     baz <- lapply(bar, sort)
     sapply(baz, paste, collapse = ":")
 }
+
+summary.glmbb <- function(object, cutoff, ...) {
+
+    stopifnot(inherits(object, "glmbb"))
+
+    if (missing(cutoff)) {
+        cutoff <- object$cutoff
+    } else {
+        stopifnot(is.numeric(cutoff))
+        stopifnot(length(cutoff) == 1)
+        stopifnot(! is.na(cutoff))
+        stopifnot(cutoff >= 0)
+    }
+
+    e <- object$envir
+    fits <- ls(envir = e, pattern = "^sha1")
+    criteria <- Map(function(x) get(x, envir = e)$criterion, fits)
+    formulae <- Map(function(x) get(x, envir = e)$formula, fits)
+    names(criteria) <- NULL
+    names(formulae) <- NULL
+    criteria <- unlist(criteria)
+    formulae <- sapply(formulae, tidy.formula.hierarchical)
+    fred <- data.frame(criteria, formulae, stringsAsFactors = FALSE)
+    fred <- fred[order(criteria), ]
+    fred <- fred[fred$criteria <= min(fred$criteria) + cutoff, ]
+    w <- fred$criteria
+    w <- w - w[1]
+    w <- exp(- w / 2)
+    w <- w / sum(w)
+    structure(list(
+        results = data.frame(criterion = fred$criteria, weight = w,
+            formula = fred$formulae, stringsAsFactors = FALSE),
+            cutoff.search = object$cutoff, cutoff.summary = cutoff,
+            criterion = object$criterion), class = "summary.glmbb")
+}
+
+print.summary.glmbb <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
+    stopifnot(inherits(x, "summary.glmbb"))
+
+    cutoff <- format(signif(x$cutoff.search, digits))
+    cutoff.too <- format(signif(x$cutoff.summary, digits))
+
+    cat("\n")
+    cat("Results of search for hierarchical models with lowest ",
+        x$criterion, ".\n", sep = "")
+    cat("Search was for all models with ", x$criterion,
+        " no larger than min(", x$criterion, ") + ", cutoff, "\n", sep = "")
+    if (x$cutoff.summary == x$cutoff.search) {
+        cat("These are shown below.\n")
+    } else {
+        cat("Summary was requested for all models with ", x$criterion,
+            " no larger than min(", x$criterion, ") + ", cutoff.too,
+            "\n", sep = "")
+        if (x$cutoff.summary > x$cutoff.search) {
+            cat("Since the summary cutoff > search cutoff,",
+                " some models\n     with ", x$criterion, " below the summary",
+                " cutoff may have been missed\n", sep = "")
+        } else {
+            cat("Since summary cutoff < search cutoff,",
+                " weights do not sum to one\n", sep = "")
+        }
+    }
+    cat("\n")
+
+    results <- x$results
+    print(results, digits = digits, right = FALSE, row.names = FALSE,
+        print.gap = 2L)
+    cat("\n")
+}
+
 

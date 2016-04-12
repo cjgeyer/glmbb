@@ -3,7 +3,8 @@
 \title{All Hierarchical Models for GLM via Branch and Bound}
 \usage{
 glmbb(big, little = ~ 1, family = poisson, data,
-    criterion = c("AIC", "AICc", "BIC"), cutoff = 10, trace = FALSE, \dots)
+    criterion = c("AIC", "AICc", "BIC"), cutoff = 10,
+    trace = FALSE, \dots)
 }
 \description{
   Find all hierarchical models of specified GLM with
@@ -94,7 +95,9 @@ glmbb(big, little = ~ 1, family = poisson, data,
 }
 \examples{
 data(crabs)
-gout <- glmbb(satell ~ (color + spine + width + weight)^3, data = crabs)
+gout <- glmbb(satell ~ (color + spine + width + weight)^3,
+    criterion = "BIC", data = crabs)
+summary(gout)
 }
 \keyword{models}
 \keyword{regression}

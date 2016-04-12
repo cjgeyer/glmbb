@@ -1,7 +1,7 @@
 
-R version 3.2.4 (2016-03-10) -- "Very Secure Dishes"
-Copyright (C) 2016 The R Foundation for Statistical Computing
-Platform: i686-pc-linux-gnu (32-bit)
+R version 3.2.3 (2015-12-10) -- "Wooden Christmas-Tree"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -222,7 +222,88 @@ Warning messages:
 >  all.equal(criteria, criteria.too)
 [1] TRUE
 > 
+>  opt <- options(width = 132)
+>  summary(gout)
+
+Results of search for hierarchical models with lowest AICc.
+Search was for all models with AICc no larger than min(AICc) + 5
+These are shown below.
+
+  criterion  weight   formula                                                         
+  899.4      0.19469  satell ~ color*spine + spine*weight                             
+  900.0      0.14155  satell ~ color*spine + width*weight                             
+  900.2      0.12846  satell ~ color*spine + color*width + width*weight               
+  900.9      0.09134  satell ~ width + color*spine + spine*weight                     
+  901.0      0.08842  satell ~ color*spine + spine*width + width*weight               
+  901.2      0.08022  satell ~ color*spine + spine*weight + width*weight              
+  902.2      0.04940  satell ~ weight + color*spine + spine*width                     
+  902.2      0.04741  satell ~ color*spine + color*weight + width*weight              
+  902.4      0.04332  satell ~ color*spine + color*width + spine*weight               
+  902.8      0.03525  satell ~ color*spine + color*width + spine*weight + width*weight
+  903.5      0.02576  satell ~ color*spine + color*weight + spine*weight              
+  903.9      0.02022  satell ~ color*spine + color*weight                             
+  904.0      0.01996  satell ~ color*spine + color*width + spine*width + width*weight 
+  904.2      0.01735  satell ~ color*spine + spine*width + spine*weight + width*weight
+  904.3      0.01665  satell ~ weight + color*spine + color*width                     
+
+>  summary(gout, cutoff = 2)
+
+Results of search for hierarchical models with lowest AICc.
+Search was for all models with AICc no larger than min(AICc) + 5
+Summary was requested for all models with AICc no larger than min(AICc) + 2
+Since summary cutoff < search cutoff, weights do not sum to one
+
+  criterion  weight  formula                                           
+  899.4      0.2686  satell ~ color*spine + spine*weight               
+  900.0      0.1953  satell ~ color*spine + width*weight               
+  900.2      0.1773  satell ~ color*spine + color*width + width*weight 
+  900.9      0.1260  satell ~ width + color*spine + spine*weight       
+  901.0      0.1220  satell ~ color*spine + spine*width + width*weight 
+  901.2      0.1107  satell ~ color*spine + spine*weight + width*weight
+
+>  summary(gout, cutoff = 8)
+
+Results of search for hierarchical models with lowest AICc.
+Search was for all models with AICc no larger than min(AICc) + 5
+Summary was requested for all models with AICc no larger than min(AICc) + 8
+Since the summary cutoff > search cutoff, some models
+     with AICc below the summary cutoff may have been missed
+
+  criterion  weight    formula                                                                       
+  899.4      0.171411  satell ~ color*spine + spine*weight                                           
+  900.0      0.124631  satell ~ color*spine + width*weight                                           
+  900.2      0.113104  satell ~ color*spine + color*width + width*weight                             
+  900.9      0.080424  satell ~ width + color*spine + spine*weight                                   
+  901.0      0.077852  satell ~ color*spine + spine*width + width*weight                             
+  901.2      0.070628  satell ~ color*spine + spine*weight + width*weight                            
+  902.2      0.043491  satell ~ weight + color*spine + spine*width                                   
+  902.2      0.041738  satell ~ color*spine + color*weight + width*weight                            
+  902.4      0.038140  satell ~ color*spine + color*width + spine*weight                             
+  902.8      0.031036  satell ~ color*spine + color*width + spine*weight + width*weight              
+  903.5      0.022683  satell ~ color*spine + color*weight + spine*weight                            
+  903.9      0.017803  satell ~ color*spine + color*weight                                           
+  904.0      0.017569  satell ~ color*spine + color*width + spine*width + width*weight               
+  904.2      0.015275  satell ~ color*spine + spine*width + spine*weight + width*weight              
+  904.3      0.014660  satell ~ weight + color*spine + color*width                                   
+  904.4      0.013939  satell ~ color*spine + spine*width + spine*weight                             
+  904.8      0.011593  satell ~ color*spine*width + spine*width*weight                               
+  904.9      0.010941  satell ~ color*spine + color*width*weight                                     
+  905.0      0.010351  satell ~ weight + color*spine + color*width + spine*width                     
+  905.2      0.009581  satell ~ width + color*spine + color*weight + spine*weight                    
+  905.3      0.009172  satell ~ color*spine + color*weight + spine*weight + width*weight             
+  905.4      0.008771  satell ~ color*spine + spine*width + color*weight + width*weight              
+  906.0      0.006475  satell ~ color*spine*weight                                                   
+  906.1      0.006061  satell ~ color*spine + spine*width + color*weight                             
+  906.1      0.005948  satell ~ width + color*spine + color*weight                                   
+  906.2      0.005743  satell ~ weight + color*spine                                                 
+  906.3      0.005498  satell ~ color*spine + color*width + spine*width + spine*weight               
+  906.9      0.004100  satell ~ color*spine + color*width + color*weight + width*weight              
+  907.0      0.003924  satell ~ color*spine + color*width + spine*width + spine*weight + width*weight
+  907.0      0.003798  satell ~ color*width*weight                                                   
+  907.1      0.003660  satell ~ width*weight + color*spine*width                                     
+
+> 
 > 
 > proc.time()
    user  system elapsed 
-  8.628   0.100   8.733 
+  3.898   0.021   3.975 
