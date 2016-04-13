@@ -1,6 +1,6 @@
 \name{glmbb}
 \alias{glmbb}
-\title{All Hierarchical Models for GLM via Branch and Bound}
+\title{All Hierarchical Models for Generalized Linear Model}
 \usage{
 glmbb(big, little = ~ 1, family = poisson, data,
     criterion = c("AIC", "AICc", "BIC"), cutoff = 10,
