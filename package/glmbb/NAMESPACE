@@ -1,4 +1,6 @@
 export(glmbb)
+export(isGraphical)
+export(isHierarchical)
 export(tidy.formula.hierarchical)
 S3method(print, summary.glmbb)
 S3method(summary, glmbb)
