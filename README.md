@@ -4,7 +4,7 @@ submodels of a specified
 with criterion
 ([AIC](https://en.wikipedia.org/wiki/Akaike_information_criterion),
 [BIC](https://en.wikipedia.org/wiki/Bayesian_information_criterion), or
-([AICc](https://en.wikipedia.org/wiki/Akaike_information_criterion#AICc))
+[AICc](https://en.wikipedia.org/wiki/Akaike_information_criterion#AICc))
 within a specified cutoff of the minimum value.  Alternatively, all the
 same thing except with just graphical models rather than hierarchical models.
 It uses the branch and bound algorithm so it does not have to fit all models.
