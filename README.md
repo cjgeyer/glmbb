@@ -1,4 +1,5 @@
-This is an R package, which is on CRAN, that searches for all hierarchical
+This is an [R](https://www.r-project.org/) package, which is on
+[CRAN](https://cran.r-project.org/), that searches for all hierarchical
 submodels of a specified
 [GLM](https://en.wikipedia.org/wiki/Generalized_linear_model)
 with criterion
