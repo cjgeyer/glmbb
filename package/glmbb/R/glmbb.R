@@ -173,12 +173,12 @@ is.hierarchical <- function(mt) {
     stopifnot(is.matrix(f))
     for (j in 1:ncol(f)) {
        x <- f[ , j]
-       ii <- which(x == 1)
+       ii <- which(x >= 1)
        if (length(ii) == 1) next
        for (i in ii) {
            xtry <- x
            xtry[i] <- 0
-           foo <- any(apply(f, 2, function(x) all(x == xtry)))
+           foo <- any(apply(f, 2, function(x) all((x >= 1) == (xtry >= 1))))
            if (! foo) return(FALSE)
        }
     }
@@ -214,8 +214,8 @@ summary.glmbb <- function(object, cutoff, ...) {
     criteria <- unlist(criteria)
     formulae <- sapply(formulae, tidy.formula.hierarchical)
     fred <- data.frame(criteria, formulae, stringsAsFactors = FALSE)
-    fred <- fred[order(criteria), ]
-    fred <- fred[fred$criteria <= min(fred$criteria) + cutoff, ]
+    fred <- fred[order(criteria), , drop = FALSE]
+    fred <- fred[fred$criteria <= min(fred$criteria) + cutoff, , drop = FALSE]
     w <- fred$criteria
     w <- w - w[1]
     w <- exp(- w / 2)

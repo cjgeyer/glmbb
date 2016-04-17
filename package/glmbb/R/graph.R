@@ -1,19 +1,17 @@
-isGraphical <- function(formula) {
+findCliques <- function(mt) {
 
-    stopifnot(inherits(formula, "formula"))
-    if (! is.hierarchical(terms(formula)))
-        stop("model is not hierarchical")
+    stopifnot(inherits(mt, "terms"))
 
-    mt <- terms(formula)
     mf <- attr(mt, "factors")
     mr <- attr(mt, "response")
+    if (! is.matrix(mf)) return(list())
     if (mr != 0)
-        mf <- mf[- mr, ]
+        mf <- mf[- mr, , drop = FALSE]
     g <- matrix(0, nrow(mf), nrow(mf))
     for (i in 1:nrow(mf))
         for (j in 1:nrow(mf))
             if (i != j)
-                g[i, j] <- any(mf[i, ] * mf[j, ] == 1)
+                g[i, j] <- any(mf[i, ] * mf[j, ] >= 1)
 
     e <- new.env(hash = TRUE, parent = emptyenv())
 
@@ -36,18 +34,88 @@ isGraphical <- function(formula) {
     foo <- BronKerbosch(integer(0), 1:nrow(mf), integer(0))
     bar <- as.list(e)
     names(bar) <- NULL
+    bar
+}
+
+isGraphical <- function(formula) {
+
+    stopifnot(inherits(formula, "formula"))
+
+    mt <- terms(formula)
+    mf <- attr(mt, "factors")
+    if (! is.matrix(mf))
+        return(TRUE)
+    mr <- attr(mt, "response")
+    if (mr != 0)
+        mf <- mf[- mr, , drop = FALSE]
+
+    if (! is.hierarchical(mt))
+        stop("model is not hierarchical")
+
+    bar <- findCliques(mt)
 
     ok <- TRUE
     for (i in bar) {
-        qux <- rep(0, nrow(mf))
-        qux[i] <- 1
-        ok <- ok & any(apply(mf, 2, function(x) all(x == qux)))
+        qux <- 1:nrow(mf) %in% i
+        quux <- apply(mf, 2, function(x) all((x >= 1) == qux))
+        ok <- ok & any(quux)
     }
     return(ok)
+}
+
+asGraphical <- function(formula) {
+
+    stopifnot(inherits(formula, "formula"))
+
+    mt <- terms(formula)
+    mf <- attr(mt, "factors")
+    mr <- attr(mt, "response")
+    mi <- attr(mt, "intercept")
+    if (! is.matrix(mf))
+        return(formula)
+
+    if (mr != 0) {
+        response.name <- rownames(mf)[mr]
+        mf <- mf[- mr, , drop = FALSE]
+    } else {
+        response.name <- ""
+    }
+    covariates <- rownames(mf)
+
+    bar <- findCliques(mt)
+    bar <- lapply(bar, function(i) covariates[i])
+    bar <- lapply(bar, function(x) paste(x, collapse = "*"))
+    bar <- unlist(bar)
+    bar <- paste(bar, collapse = " + ")
+    bar <- paste(response.name, "~", bar)
+    return(as.formula(bar))
 }
 
 isHierarchical <- function(formula) {
     stopifnot(inherits(formula, "formula"))
     is.hierarchical(terms(formula))
+}
+
+asHierarchical <- function(formula) {
+    stopifnot(inherits(formula, "formula"))
+    mt <- terms(formula)
+    ml <- attr(mt, "term.labels")
+    mi <- attr(mt, "intercept")
+    mr <- attr(mt, "response")
+    mv <- attr(mt, "variables")
+    foo <- gsub(":", "*", ml)
+    if (length(foo) == 0) {
+        foo <- as.character(mi)
+    } else {
+        foo <- paste(foo, collapse = " + ")
+        if (mi == 0)
+            foo <- paste("0 +", foo)
+    }
+    foo <- paste("~", foo)
+    if (mr != 0) {
+        bar <- as.list(mv)[[mr + 1]]
+        foo <- paste(bar, foo)
+    }
+    as.formula(foo)
 }
 

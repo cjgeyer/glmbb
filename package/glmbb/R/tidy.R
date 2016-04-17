@@ -11,11 +11,11 @@ tidy.formula.hierarchical <- function(formula) {
     for (i in ncol(mf):1)
         if (ok[i]) {
             foo <- mf[ , i]
-            bar <- variables[foo == 1]
+            bar <- variables[foo >= 1]
             bar <- paste(bar, collapse = "*")
             new.terms <- c(bar, new.terms)
             for (j in 1:i)
-                if (all(mf[ , j] <= foo))
+                if (all((mf[ , j] >= 1) <= (foo >= 1)))
                     ok[j] <- FALSE
         }
     new.formula <- paste(new.terms, collapse = " + ")

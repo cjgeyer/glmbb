@@ -1,21 +1,29 @@
 \name{isGraphical}
+\alias{asGraphical}
 \alias{isGraphical}
+\alias{asHierarchical}
 \alias{isHierarchical}
 \title{Hierarchical and Graphical Models}
 \usage{
+asGraphical(formula)
 isGraphical(formula)
+asHierarchical(formula)
 isHierarchical(formula)
 }
 \description{
   Say whether a formula corresponds to a hierarchical model or
+  a graphical model.  Or return a formula for a hierarchical or
   a graphical model.
 }
 \arguments{
   \item{formula}{an object of class \code{"\link[stats]{formula}"}.}
 }
 \value{
-  Logical.  \code{TRUE} if and only if the model is hierarchical or
-  graphical.
+  For \dQuote{is} functions, logical.  \code{TRUE} if and only if
+  the model is hierarchical or graphical, as the case may be.
+
+  For \dQuote{as} functions, a formula for the smallest supermodel
+  of the given model that is hierarchical or graphical, as the case may be.
 }
 \details{
 A model is hierarchical if for every interaction it contains all
@@ -34,5 +42,8 @@ isHierarchical(~ u : v)
 
 isGraphical(~ u * v + u * w)
 isGraphical(~ (u + v + w)^2)
+
+asHierarchical(~ u:v + v:w)
+asGraphical(~ (u + v + w)^2)
 }
 \keyword{misc}

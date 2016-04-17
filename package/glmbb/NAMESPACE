@@ -1,3 +1,5 @@
+export(asGraphical)
+export(asHierarchical)
 export(glmbb)
 export(isGraphical)
 export(isHierarchical)
