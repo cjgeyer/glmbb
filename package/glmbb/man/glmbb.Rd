@@ -7,7 +7,7 @@ glmbb(big, little = ~ 1, family = poisson, data,
     trace = FALSE, graphical = FALSE, \dots)
 }
 \description{
-  Find all hierarchical models of specified GLM with
+  Find all hierarchical submodels of specified GLM with
   information criterion (AIC, BIC, or AICc) within specified cutoff
   of minimum value.  Alternatively, all such graphical models.
   Use branch and bound algorithm so we do not have to fit all

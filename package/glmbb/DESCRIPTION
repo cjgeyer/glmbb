@@ -1,5 +1,5 @@
 Package: glmbb
-Version: 0.2
+Version: 0.2-1
 Date: 2016-04-17
 Title: All Hierarchical or Graphical Models for Generalized Linear Model
 Author: Charles J. Geyer <charlie@stat.umn.edu>.
@@ -12,3 +12,4 @@ Description: Find all hierarchical models of specified generalized linear
     cutoff of minimum value.  Alternatively, find all such graphical models.
     Use branch and bound algorithm so we do not have to fit all models.
 License: MIT + file LICENSE
+URL: https://github.com/cjgeyer/glmbb
