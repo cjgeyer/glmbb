@@ -1,15 +1,15 @@
 \name{glmbb}
 \alias{glmbb}
-\title{All Hierarchical Models for Generalized Linear Model}
+\title{All Hierarchical or Graphical Models for Generalized Linear Model}
 \usage{
 glmbb(big, little = ~ 1, family = poisson, data,
     criterion = c("AIC", "AICc", "BIC"), cutoff = 10,
-    trace = FALSE, \dots)
+    trace = FALSE, graphical = FALSE, \dots)
 }
 \description{
   Find all hierarchical models of specified GLM with
   information criterion (AIC, BIC, or AICc) within specified cutoff
-  of minimum value.
+  of minimum value.  Alternatively, all such graphical models.
   Use branch and bound algorithm so we do not have to fit all
   models.
 }
@@ -48,8 +48,11 @@ glmbb(big, little = ~ 1, family = poisson, data,
 
   \item{trace}{logical.  Emit debug info if \code{TRUE}.}
 
+  \item{graphical}{logical.  If \code{TRUE} search only over graphical models
+      rather than hierarchical models.}
+
   \item{\dots}{additional named or unnamed arguments to be passed
-    to \code{stats}{glm.fit}.}
+    to \code{stats}{glm}.}
 }
 \details{
   Typical value for \code{big} is something like \code{foo ~ bar * baz * qux}
@@ -71,6 +74,12 @@ glmbb(big, little = ~ 1, family = poisson, data,
   \code{~ 1} is nested within every model except those specified to have
   no intercept by \code{0 +} or some such (see \code{link[stats]{formula}}).
 
+  The interaction graph of a model is the undirected graph whose node set is
+  the predictor variables in the model and whose edge set has one edge for each
+  pair of variables that are in an interaction term.  A clique in a graph is
+  a maximal complete subgraph.  A model is graphical if it is hierarchical
+  and has an interaction term for the variables in each clique.
+  When \code{graphical = TRUE} only graphical models are considered.
 }
 \value{
   An object of class \code{"glmbb"} containing at least the following
@@ -82,6 +91,7 @@ glmbb(big, little = ~ 1, family = poisson, data,
   \item{cutoff}{the argument \code{cutoff}.}
   \item{envir}{an R environment object containing all of the fits done.}
   \item{min.crit}{the minimum value of the criterion.}
+  \item{graphical}{the argument \code{graphical}.}
 }
 \references{
   Hand, D. J. (1981)
@@ -92,6 +102,8 @@ glmbb(big, little = ~ 1, family = poisson, data,
   \code{link[stats]{family}},
   \code{link[stats]{formula}},
   \code{link[stats]{glm}},
+  \code{\link{isGraphical}},
+  \code{\link{isHierarchical}}
 }
 \examples{
 data(crabs)

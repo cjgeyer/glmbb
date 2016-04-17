@@ -1,5 +1,6 @@
 glmbb <- function(big, little = ~ 1, family = poisson, data,
-    criterion = c("AIC", "AICc", "BIC"), cutoff = 10, trace = FALSE, ...) {
+    criterion = c("AIC", "AICc", "BIC"), cutoff = 10, trace = FALSE,
+    graphical = FALSE, ...) {
 
     criterion <- match.arg(criterion)
 
@@ -49,6 +50,9 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
     stopifnot(is.logical(trace))
     stopifnot(length(trace) == 1)
 
+    stopifnot(is.logical(graphical))
+    stopifnot(length(graphical) == 1)
+
     # make little have same response as big
     little.char <- as.character(little)
     big.char <- as.character(big)
@@ -96,8 +100,12 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
                 o$criterion.penalty <- 2 * p + 2 * p * (p + 1) / (n - p - 1)
                 o$criterion <- o$criterion.deviance + o$criterion.penalty
             }
+            if (graphical)
+                o$graphical <- isGraphical(o$formula)
             assign(xkey, o, e)
-            if (e$min.crit > o$criterion) e$min.crit <- o$criterion
+            if ((! graphical) || o$graphical)
+                if (e$min.crit > o$criterion)
+                    e$min.crit <- o$criterion
             if (trace) {
                 cat("        model criterion =", o$criterion, "\n",
                     file = stderr())
@@ -163,7 +171,7 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
 
     return(structure(list(data = mf, little = little, big = big,
         criterion = criterion, cutoff = cutoff, envir = e,
-        min.crit = e$min.crit), class = "glmbb"))
+        min.crit = e$min.crit, graphical = graphical), class = "glmbb"))
 }
 
 is.hierarchical <- function(mt) {
@@ -213,6 +221,11 @@ summary.glmbb <- function(object, cutoff, ...) {
     names(formulae) <- NULL
     criteria <- unlist(criteria)
     formulae <- sapply(formulae, tidy.formula.hierarchical)
+    if (object$graphical) {
+        inies <- sapply(formulae, function(x) isGraphical(as.formula(x)))
+        criteria <- criteria[inies]
+        formulae <- formulae[inies]
+    }
     fred <- data.frame(criteria, formulae, stringsAsFactors = FALSE)
     fred <- fred[order(criteria), , drop = FALSE]
     fred <- fred[fred$criteria <= min(fred$criteria) + cutoff, , drop = FALSE]
@@ -224,17 +237,25 @@ summary.glmbb <- function(object, cutoff, ...) {
         results = data.frame(criterion = fred$criteria, weight = w,
             formula = fred$formulae, stringsAsFactors = FALSE),
             cutoff.search = object$cutoff, cutoff.summary = cutoff,
-            criterion = object$criterion), class = "summary.glmbb")
+            criterion = object$criterion, graphical = object$graphical),
+            class = "summary.glmbb")
 }
 
-print.summary.glmbb <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
+print.summary.glmbb <- function(x,
+    digits = max(3L, getOption("digits") - 3L), ...) {
+
     stopifnot(inherits(x, "summary.glmbb"))
 
     cutoff <- format(signif(x$cutoff.search, digits))
     cutoff.too <- format(signif(x$cutoff.summary, digits))
 
+    if (x$graphical)
+        type <- "graphical"
+    else
+        type <- "hierarchical"
+
     cat("\n")
-    cat("Results of search for hierarchical models with lowest ",
+    cat("Results of search for ", type, " models with lowest ",
         x$criterion, ".\n", sep = "")
     cat("Search was for all models with ", x$criterion,
         " no larger than min(", x$criterion, ") + ", cutoff, "\n", sep = "")

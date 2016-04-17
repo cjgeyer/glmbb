@@ -1,7 +1,7 @@
 Package: glmbb
-Version: 0.1
-Date: 2016-04-12
-Title: All Hierarchical Models for Generalized Linear Model
+Version: 0.2
+Date: 2016-04-17
+Title: All Hierarchical or Graphical Models for Generalized Linear Model
 Author: Charles J. Geyer <charlie@stat.umn.edu>.
 Maintainer: Charles J. Geyer <charlie@stat.umn.edu>
 Depends: R (>= 3.0.0)
@@ -9,6 +9,6 @@ Imports: digest, stats
 ByteCompile: TRUE
 Description: Find all hierarchical models of specified generalized linear
     model with information criterion (AIC, BIC, or AICc) within specified
-    cutoff of minimum value.  Use branch and bound algorithm so we do not
-    have to fit all models.
+    cutoff of minimum value.  Alternatively, find all such graphical models.
+    Use branch and bound algorithm so we do not have to fit all models.
 License: MIT + file LICENSE
