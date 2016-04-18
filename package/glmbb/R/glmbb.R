@@ -85,6 +85,8 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
             o <- glm(f, family = family, data = mf, ...)
             p <- sum(! is.na(o$coefficients))
             aic <- AIC(o)
+            if (is.null(aic))
+                stop("glm doesn't allow AIC or other IC with this family")
             if (criterion == "AIC") {
                 o$criterion <- aic
                 o$criterion.deviance <- aic - 2 * p
@@ -97,7 +99,8 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
             }
             if (criterion == "AICc") {
                 o$criterion.deviance <- aic - 2 * p
-                o$criterion.penalty <- 2 * p + 2 * p * (p + 1) / (n - p - 1)
+                o$criterion.penalty <- if (n > p + 1) 2 * p +
+                    2 * p * (p + 1) / (n - p - 1) else Inf
                 o$criterion <- o$criterion.deviance + o$criterion.penalty
             }
             if (graphical)
