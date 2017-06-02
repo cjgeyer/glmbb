@@ -79,6 +79,8 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
         xkey <- paste("sha1", xhash, sep = ".")
         if (exists(xkey, e)) {
             o <- get(xkey, e)
+            if (trace)
+                cat("        look up model", deparse(f), "\n", file = stderr())
         } else {
             if (trace)
                 cat("        fitting model", deparse(f), "\n", file = stderr())
@@ -109,12 +111,12 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
             if ((! graphical) || o$graphical)
                 if (e$min.crit > o$criterion)
                     e$min.crit <- o$criterion
-            if (trace) {
-                cat("        model criterion =", o$criterion, "\n",
-                    file = stderr())
-                cat("        minimum so far =", e$min.crit, "\n",
-                    file = stderr())
-            }
+        }
+        if (trace) {
+            cat("        model criterion =", o$criterion, "\n",
+                file = stderr())
+            cat("        minimum so far =", e$min.crit, "\n",
+                file = stderr())
         }
         return(o)
     }
@@ -156,9 +158,12 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
         if (trace)
             cat("    splitting on term", the.term, "\n", file = stderr())
         little.plus <- update(little, paste("~ . +", the.term))
-        the.term.re <- unlist(strsplit(the.term, split = ":"))
-        the.term.re <- paste(the.term.re, collapse = ".*")
-        outies <- grep(the.term.re, lb, value = TRUE)
+
+        the.term.split <- strsplit(the.term, split = ":")[[1]]
+        lb.split <- strsplit(lb, split = ":")
+        lb.outies <- vapply(lb.split, function(x) all(the.term.split %in% x),
+            logical(1))
+        outies <- lb[lb.outies]
         outies <- paste(outies, collapse = " - ")
         big.minus <- update(big, paste("~ . -", outies))
         if (trace) {
@@ -200,7 +205,7 @@ standardize.term.labels <- function(foo) {
     stopifnot(is.character(foo))
     bar <- strsplit(foo, split = ":")
     baz <- lapply(bar, sort)
-    sapply(baz, paste, collapse = ":")
+    vapply(baz, paste, collapse = ":", character(1))
 }
 
 summary.glmbb <- function(object, cutoff, ...) {
@@ -223,9 +228,10 @@ summary.glmbb <- function(object, cutoff, ...) {
     names(criteria) <- NULL
     names(formulae) <- NULL
     criteria <- unlist(criteria)
-    formulae <- sapply(formulae, tidy.formula.hierarchical)
+    formulae <- vapply(formulae, tidy.formula.hierarchical, character(1))
     if (object$graphical) {
-        inies <- sapply(formulae, function(x) isGraphical(as.formula(x)))
+        inies <- vapply(formulae, function(x) isGraphical(as.formula(x)),
+            logical(1))
         criteria <- criteria[inies]
         formulae <- formulae[inies]
     }

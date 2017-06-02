@@ -195,6 +195,8 @@ R function \texttt{glm.fit} requires?
 
 \section{More on Models}
 
+\subsection{Try I}
+
 So let's try it.
 <<data>>=
 mf <- as.data.frame(HairEyeColor)
@@ -230,6 +232,8 @@ big.minus
 @
 Hmmmmm.  It's not smart enough to convert the whole right-hand side
 to \verb@Eye*Sex@.  I guess we're stuck with that.
+
+\subsection{Oops! Try II}
 
 Actually, in debugging we found out that the above design was completely
 wrong.
@@ -275,6 +279,71 @@ a left-hand side.
 little <- fred ~ 1
 <<paste-cont>>
 @
+
+\subsection{Oops! Try III}
+
+\begin{quotation}
+Some people, when confronted with a problem, think ``I know,
+I'll use regular expressions.''  Now they have two problems.
+\\
+\hspace*{\fill} --- \parbox[t]{0.5\textwidth}{Jamie Zawinski}
+\end{quotation}
+
+Embarrassingly, try II is also quite wrong for the well-known
+reason this famous quotation expresses.  We should have avoided \texttt{grep}.
+
+When some of the names appear as parts of other names, there is a problem.
+<<oopsie-oopsie>>=
+big <- Freq ~ A * AB * ABC * ABCD
+big.terms <- terms(big)
+big.term.labels <- attr(big.terms, "term.labels")
+big.term.labels <- standardize.term.labels(big.term.labels)
+big.term.labels
+the.term <- "A:AB"
+
+the.term.re <- unlist(strsplit(the.term, split = ":"))
+the.term.re <- paste(the.term.re, collapse = ".*")
+the.term.re
+outies <- grep(the.term.re, big.term.labels, value = TRUE)
+outies
+@
+Disaster.
+
+Do it without regular expressions (there is undoubtedly a correct solution
+using regular expressions, but it would be hard to verify, hard to test).
+<<oopsie-oopsie-fixup>>=
+the.term.split <- strsplit(the.term, split = ":")[[1]]
+lb.split <- strsplit(big.term.labels, split = ":")
+lb.outies <- vapply(lb.split, function(x) all(the.term.split %in% x),
+    logical(1))
+outies <- big.term.labels[lb.outies]
+outies
+@
+
+Check that it also works when the factors in the term are not contiguous
+in the standardized labels.
+<<oopsie-oopsie-fixup-too>>=
+the.term <- "A:ABCD"
+<<oopsie-oopsie-fixup>>
+@
+Looks good.
+
+Too bad the author didn't remember this Jamie Zawinski quote when writing
+the package.  The bug wasn't discovered until Aaron Rendahl used it on a
+problem with variable names
+\begin{verbatim}
+PT
+PTT
+QFA
+PTdelta
+PT1d
+PTTdelta
+PTT2dmax
+\end{verbatim}
+more than a year after the first version of the package appeared on CRAN.
+
+That's the trouble with regular expressions.  It worked correctly on most
+examples, but not on all.
 
 \section{Graphical Models}
 
@@ -394,4 +463,6 @@ Wikipedia (2016).
 \end{thebibliography}
 
 \end{document}
+
+
 

@@ -1,0 +1,43 @@
+---
+title: "glmbb test"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## from glmbb documentation
+AICc <- function(object) {
+    stopifnot(inherits(object, "glm"))
+    # https://en.wikipedia.org/wiki/Akaike_information_criterion#AICc
+    # for definition of AICc
+    p <- sum(! is.na(object$coefficients))
+    n <- length(object$fitted.values)
+    AIC(object) + 2 * p * (p + 1) / (n - p - 1)
+}
+```
+
+```{r data}
+## data
+dx <- read.csv("http://www.stat.umn.edu/~rend0020/glmbb-test.csv")
+dx$AnyBleeding <- factor(ifelse(dx$Bleeding=="None", "No", "Yes"))
+
+## glmbb
+library(glmbb)
+m0 <- glmbb(AnyBleeding ~ PT + PTT + QFA + PTdelta + PT1d + PTTdelta + PTT2dmax, 
+            data=dx, family=binomial, cutoff=2, trace=FALSE,
+            criterion="AICc")
+summary(m0)
+
+## brute force
+vs <- c("PT", "PTT", "QFA", "PTdelta", "PT1d", "PTTdelta", "PTT2dmax")
+xx <- do.call(expand.grid, setNames(rep(list(c(TRUE, FALSE)), length(vs)), vs))
+xx$formula <- apply(xx, 1, function(x) paste(c(1, names(xx)[x]), collapse=" + "))
+xx$formula <- paste("AnyBleeding ~", sub("1 + ", "", xx$formula, fixed=TRUE))
+ms <- lapply(xx$formula, function(fi) do.call("glm", 
+             list(fi, data=as.name("dx"), family="binomial")))
+xx$criterion <- sapply(ms, AICc)
+xx <- xx[order(xx$criterion),]
+print(xx[xx$criterion < min(xx$criterion) + 2, c("criterion", "formula")], 
+      row.names=FALSE, right=FALSE)
+```
