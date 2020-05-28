@@ -283,7 +283,33 @@ gout.lcm <- glm(y ~ (v1 + v2 + v3 + v4 + v5 + v6 + v7)^3,
 sum(is.na(gout.lcm$coefficients))
 @
 
-
+Compare AIC and BIC.
+<<aic>>=
+AIC(gout)
+AIC(gout.lcm)
+foo <- logLik(gout)
+all.equal(- 2 * as.numeric(foo) + 2 * attr(foo, "df"),
+    AIC(gout))
+foo <- logLik(gout.lcm)
+all.equal(- 2 * as.numeric(foo) + 2 * attr(foo, "df"),
+    AIC(gout.lcm))
+@
+The models differ by one degree of freedom but have the same maximized
+value of the log likelihood.  So this makes sense.
+<<bic>>=
+BIC(gout)
+BIC(gout.lcm)
+foo <- logLik(gout)
+- 2 * as.numeric(foo) + log(sum(gout$y)) * attr(foo, "df")
+foo <- logLik(gout.lcm)
+- 2 * as.numeric(foo) + log(sum(gout.lcm$y)) * attr(foo, "df")
+@
+R function \code{BIC} gives complete nonsense because it considers
+the degrees of freedom to be the number of cells in the contingency table
+rather than the number of individuals classified.  This is clearly wrong
+because when we are thinking about contingency tables $n$ is the sample size
+\citep{kass-raftery,raftery}.
+Our calculations here are correct.
 
 
 
@@ -311,6 +337,19 @@ Geyer, C.~J. (2016a).
 Geyer, C.~J. (2016b).
 \newblock Stat 5421 Lecture Notes: Exponential Families, Part II.
 \newblock \url{http://www.stat.umn.edu/geyer/5421/notes/infinity.pdf}.
+
+\bibitem[Kass and Raftery(1995)]{kass-raftery}
+Kass, R.~E., and Raftery, A.~E. (1995).
+\newblock Bayes factors.
+\newblock \emph{Journal of the American Statistical Association},
+    \textbf{90}, 773--795.
+
+\bibitem[Raftery(1986)]{raftery}
+Raftery, A.~E. (1986).
+\newblock A note on Bayes factors for log‐linear contingency table models
+    with vague prior information.
+\newblock \emph{Journal of the Royal Statistical Society, Series B},
+    \textbf{48}, 249--250.
 
 \end{thebibliography}
 
