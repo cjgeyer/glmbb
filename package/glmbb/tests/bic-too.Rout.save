@@ -1,0 +1,156 @@
+
+R version 4.0.2 (2020-06-22) -- "Taking Off Again"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+>      ## Dobson (1990) Page 93: Randomized Controlled Trial :
+>      ## ripped off from help page for glm
+>      counts <- c(18,17,15,20,10,20,25,13,12)
+>      outcome <- gl(3,1,9)
+>      treatment <- gl(3,3)
+>      glm.D93 <- glm(counts ~ outcome + treatment, family = poisson())
+> ## IGNORE_RDIFF_BEGIN
+>      summary(glm.D93)
+
+Call:
+glm(formula = counts ~ outcome + treatment, family = poisson())
+
+Deviance Residuals: 
+       1         2         3         4         5         6         7         8  
+-0.67125   0.96272  -0.16965  -0.21999  -0.95552   1.04939   0.84715  -0.09167  
+       9  
+-0.96656  
+
+Coefficients:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  3.045e+00  1.709e-01  17.815   <2e-16 ***
+outcome2    -4.543e-01  2.022e-01  -2.247   0.0246 *  
+outcome3    -2.930e-01  1.927e-01  -1.520   0.1285    
+treatment2   1.338e-15  2.000e-01   0.000   1.0000    
+treatment3   1.421e-15  2.000e-01   0.000   1.0000    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 10.5814  on 8  degrees of freedom
+Residual deviance:  5.1291  on 4  degrees of freedom
+AIC: 56.761
+
+Number of Fisher Scoring iterations: 4
+
+> ## IGNORE_RDIFF_END
+> 
+>  library(glmbb)
+> 
+>  foo <- glmbb(counts ~ outcome + treatment, family = poisson, crit = "BIC")
+> ## IGNORE_RDIFF_BEGIN
+>  summary(foo)
+
+Results of search for hierarchical models with lowest BIC.
+Search was for all models with BIC no larger than min(BIC) + 10
+These are shown below.
+
+  criterion  weight   formula                     
+  53.35      0.56631  counts ~ outcome            
+  54.41      0.33369  counts ~ 1                  
+  57.75      0.06292  counts ~ outcome + treatment
+  58.81      0.03708  counts ~ treatment          
+
+> ## IGNORE_RDIFF_END
+> 
+>  bar <- glmbb(counts ~ outcome + treatment, family = poisson, crit = "BIC",
++      BIC.opt = "sum")
+> ## IGNORE_RDIFF_BEGIN
+>  summary(bar)
+
+Results of search for hierarchical models with lowest BIC.
+Search was for all models with BIC no larger than min(BIC) + 10
+These are shown below.
+
+  criterion  weight   formula         
+  57.22      0.90758  counts ~ 1      
+  61.79      0.09242  counts ~ outcome
+
+> ## IGNORE_RDIFF_END
+> 
+>  e <- foo$envir
+>  e.names <- ls(envir = e, pattern = "^sha1")
+>  names(get(e.names[1], envir = e))
+ [1] "coefficients"       "residuals"          "fitted.values"     
+ [4] "effects"            "R"                  "rank"              
+ [7] "qr"                 "family"             "linear.predictors" 
+[10] "deviance"           "aic"                "null.deviance"     
+[13] "iter"               "weights"            "prior.weights"     
+[16] "df.residual"        "df.null"            "y"                 
+[19] "converged"          "boundary"           "model"             
+[22] "call"               "formula"            "terms"             
+[25] "data"               "offset"             "control"           
+[28] "method"             "contrasts"          "xlevels"           
+[31] "criterion"          "criterion.deviance" "criterion.penalty" 
+> 
+>  foo.criteria <- Map(function(x) get(x, envir = e)$criterion, e.names)
+>  foo.deviance <- Map(function(x) get(x, envir = e)$criterion.deviance, e.names)
+>  foo.penalty <- Map(function(x) get(x, envir = e)$criterion.penalty, e.names)
+>  foo.formulae <- Map(function(x) get(x, envir = e)$formula, e.names)
+>  foo.formulae <- vapply(foo.formulae, tidy.formula.hierarchical, character(1))
+>  foo.coefficients <- Map(function(x) get(x, envir = e)$coefficients, e.names)
+>  foo.p <- lapply(foo.coefficients, function(x) sum(! is.na(x)))
+>  foo.n <- length(counts)
+> 
+>  e <- bar$envir
+>  e.names <- ls(envir = e, pattern = "^sha1")
+> 
+>  bar.criteria <- Map(function(x) get(x, envir = e)$criterion, e.names)
+>  bar.deviance <- Map(function(x) get(x, envir = e)$criterion.deviance, e.names)
+>  bar.penalty <- Map(function(x) get(x, envir = e)$criterion.penalty, e.names)
+>  bar.formulae <- Map(function(x) get(x, envir = e)$formula, e.names)
+>  bar.formulae <- vapply(bar.formulae, tidy.formula.hierarchical, character(1))
+>  bar.coefficients <- Map(function(x) get(x, envir = e)$coefficients, e.names)
+>  bar.p <- lapply(bar.coefficients, function(x) sum(! is.na(x)))
+>  bar.n <- sum(counts)
+> 
+>  idx <- match(foo.formulae, bar.formulae)
+>  all(! is.na(idx))
+[1] TRUE
+> 
+>  all.equal(foo.deviance, bar.deviance[idx], check.attrib = FALSE)
+[1] TRUE
+> 
+>  foo.penalty <- as.vector(unlist(foo.penalty))
+>  bar.penalty <- as.vector(unlist(bar.penalty))
+>  foo.p <- as.vector(unlist(foo.p))
+>  bar.p <- as.vector(unlist(bar.p))
+> 
+>  all.equal(foo.penalty, log(foo.n) * foo.p)
+[1] TRUE
+>  all.equal(bar.penalty, log(bar.n) * bar.p)
+[1] TRUE
+> 
+>  foo.deviance <- as.vector(unlist(foo.deviance))
+>  bar.deviance <- as.vector(unlist(bar.deviance))
+>  foo.criteria <- as.vector(unlist(foo.criteria))
+>  bar.criteria <- as.vector(unlist(bar.criteria))
+> 
+>  all.equal(foo.criteria, foo.deviance + foo.penalty)
+[1] TRUE
+>  all.equal(bar.criteria, bar.deviance + bar.penalty)
+[1] TRUE
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  0.219   0.025   0.235 

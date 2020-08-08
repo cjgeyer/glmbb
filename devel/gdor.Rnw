@@ -34,6 +34,8 @@
 options(keep.source = TRUE, width = 60)
 @
 
+\section{Theory}
+
 This document applies the theory of \citet{gdor} to categorical data analysis.
 Also relevant are the lecture notes for Stat 5421 \citep{expfam,infinity}.
 
@@ -97,17 +99,20 @@ index set of the vectors $y$ and $\eta$ and the row index set of the model
 matrix $M$, and $J = \{1, \ldots, p\}$ be the
 index set of the vector $\delta$ and the column index set of the model
 matrix $M$, and let $m_{i j}$ denote the components of the model matrix.
-\begin{alignat*}{2}
+\begin{alignat}{2}
   \text{minimize}   & \ \sum_{\substack{i \in I \\ y_i = 0}} \sum_{j \in J}
       m_{i j} \delta_j
+  \nonumber
   \\
   \text{subject to} & \ \sum_{j \in J} m_{i j} \delta_j = 0,
       & \qquad & i \in I \opand y_i > 0
+  \label{prog:no-mu-hat}
   \\
                     & \ -1 \le \sum_{j \in J} m_{i j} \delta_j \le 0,
       & & i \in I \opand y_i = 0
-\end{alignat*}
-In fact we can do better than this if we have a fitted data vector $\hat{mu}$
+  \nonumber
+\end{alignat}
+In fact we can do better than this if we have a fitted data vector $\hat{\mu}$
 from an attempt by R function \code{glm} (or some other likelihood maximizer)
 to maximize the likelihood.  From Theorem~{6} in \citet{gdor} we must have
 $(Y - y)^T M \delta = 0$ almost surely for the limiting conditional model.
@@ -122,28 +127,31 @@ To respect this issue we adopt the notation $\hat{\mu}_j \gg 0$ indicates
 that $\hat{\mu}_j$ is larger than the tolerance and $\hat{\mu}_j \simeq 0$
 indicates that $\hat{\mu}_j$ is not larger than the tolerance.
 Then we can use this linear program
-\begin{alignat*}{2}
+\begin{alignat}{2}
   \text{minimize}   & \ \sum_{\substack{i \in I \\ \hat{\mu}_i \simeq 0}}
       \sum_{j \in J} m_{i j} \delta_j
+  \nonumber
   \\
   \text{subject to} & \ \sum_{j \in J} m_{i j} \delta_j = 0,
       & \qquad & i \in I \opand \hat{\mu}_i \gg 0
+  \label{prog:mu-hat}
   \\
                     & \ -1 \le \sum_{j \in J} m_{i j} \delta_j \le 0,
       & & i \in I \opand \hat{\mu}_i \simeq 0
-\end{alignat*}
+  \nonumber
+\end{alignat}
 
 The fact that our tolerance may be wrong and we may be misclassifying
 some of the components of $\hat{\mu}$ as zero or nonzero does no harm
 so long as the tolerance is large enough.  If we decide $\hat{\mu}_j \simeq 0$
 when in fact $\mu_j > 0$, then our linear program just has to do more work
 but is not wrong.  Any solution is still a direction of recession.
-In fact, no matter what we can still easily check whether a solution of
+In fact, no matter what, we can still easily check whether a solution of
 our linear program is a direction of recession (just check that $\eta_j \le 0$
 for all $j$ and $\eta_j < 0$ implies $y_j = 0$).
 
-In this we have come close to re-inventing "Algorithm R" of
-\citet[Section~2.4]{thesis}.  The only difference is that "Algorithm R" is
+In this we have come close to re-inventing ``Algorithm R'' of
+\citet[Section~2.4]{thesis}.  The only difference is that ``Algorithm R'' is
 not just for Poisson GLM and it also considers approximate problems using
 only a subset of the constraints, which was necessary for the application
 that was the main motivation \citep[Chapter~6]{thesis}.
@@ -157,6 +165,8 @@ sense.
 It is only when $\hat{\mu}_j \simeq 0$ for some $j$ (and typically R function
 \code{glm} issues a warning) that we have to follow up with doing a linear
 program.
+
+\section{Using CRAN Package Rcdd}
 
 So let us try this out.  We will use the data for the example
 of Section~{2.3} in \citet{gdor}.
@@ -283,6 +293,8 @@ gout.lcm <- glm(y ~ (v1 + v2 + v3 + v4 + v5 + v6 + v7)^3,
 sum(is.na(gout.lcm$coefficients))
 @
 
+\section{Digression about Information Criteria}
+
 Compare AIC and BIC.
 <<aic>>=
 AIC(gout)
@@ -300,8 +312,10 @@ value of the log likelihood.  So this makes sense.
 BIC(gout)
 BIC(gout.lcm)
 foo <- logLik(gout)
+- 2 * as.numeric(foo) + log(length(gout$y)) * attr(foo, "df")
 - 2 * as.numeric(foo) + log(sum(gout$y)) * attr(foo, "df")
 foo <- logLik(gout.lcm)
+- 2 * as.numeric(foo) + log(length(gout.lcm$y)) * attr(foo, "df")
 - 2 * as.numeric(foo) + log(sum(gout.lcm$y)) * attr(foo, "df")
 @
 R function \code{BIC} gives complete nonsense because it considers
@@ -310,6 +324,75 @@ rather than the number of individuals classified.  This is clearly wrong
 because when we are thinking about contingency tables $n$ is the sample size
 \citep{kass-raftery,raftery}.
 Our calculations here are correct.
+
+\section{Using CRAN Package ClpAPI}
+
+We would like to be able to do really large scale problems with no worries.
+R package \code{clpAPI} purports to do this.  Let's try it out.
+<<clpAPI-library>>=
+library("clpAPI")
+@
+
+The first thing is to make a model object.
+<<clpAPI-initialize>>=
+lp <- initProbCLP()
+@
+
+Apparently, we need the following.
+<<clpAPI-resize>>=
+resizeCLP(lp, 0, ncol(m))
+@
+
+And also this, to shut up printout to standard error.
+<<clpAPI-blather>>=
+setLogLevelCLP(lp, 0)
+@
+
+Now we need to recall our linear program \eqref{prog:mu-hat}, and
+recall that the model matrix is R object \code{m}, the conditions
+about $\hat{\mu}$ in \eqref{prog:mu-hat} are coded in R object \code{is.zero},
+and the objective vector is R object \code{objgrd}.  We start with the latter.
+This seems to need to be a dense vector.
+<<clpAPI-objective>>=
+chgObjCoefsCLP(lp, objgrd)
+@
+Now for our constraints.  We put in the coefficients matrix as a sparse matrix
+one row at a time.
+<<clpAPI-constraints>>=
+for (i in 1:nrow(m)) {
+    lb <- if (is.zero[i]) -1 else 0
+    m.is.nonzero <- m[i, ] != 0
+    vals <- m[i, m.is.nonzero]
+    # - 1 here for zero-origin indexing (going to C++)
+    cols <- which(m.is.nonzero) - 1
+    addRowsCLP(lp, 1, lb, 0, c(0, length(vals)), cols, vals)
+}
+@
+Now for the column bounds (the defaults are wrong for our problem).
+<<clpAPI-column-bounds>>=
+chgColLowerCLP(lp, rep(-Inf, ncol(m)))
+chgColUpperCLP(lp, rep(Inf, ncol(m)))
+@
+And the optimization "direction" to minimize.
+<<clpAPI-minimize>>=
+setObjDirCLP(lp, 1)
+@
+
+And we think we are ready to solve the linear programming problem.
+<<clpAPI-solve>>=
+primalCLP(lp)
+getSolStatusCLP(lp)
+delta.other <- as.numeric(delta)
+delta <- getColPrimCLP(lp)
+all.equal(delta, delta.other)
+@
+
+It works!
+
+And the last thing we do is destruct the model object.
+<<clpAPI-dispose>>=
+delProbCLP(lp)
+@
 
 
 

@@ -1,8 +1,9 @@
 glmbb <- function(big, little = ~ 1, family = poisson, data,
     criterion = c("AIC", "AICc", "BIC"), cutoff = 10, trace = FALSE,
-    graphical = FALSE, ...) {
+    graphical = FALSE, BIC.option = c("length", "sum"), ...) {
 
     criterion <- match.arg(criterion)
+    BIC.option <- match.arg(BIC.option)
 
     stopifnot(inherits(big, "formula"))
     stopifnot(inherits(little, "formula"))
@@ -68,6 +69,9 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
 
     n <- nrow(mf)
 
+    resp <- model.response(mf)
+    nsum <- sum(resp)
+
     e$min.crit <- Inf
 
     fitter <- function(f) {
@@ -95,9 +99,15 @@ glmbb <- function(big, little = ~ 1, family = poisson, data,
                 o$criterion.penalty <- 2 * p
             }
             if (criterion == "BIC") {
-                o$criterion <- BIC(o)
-                o$criterion.deviance <- aic - 2 * p
-                o$criterion.penalty <- log(n) * p
+                if (BIC.option == "length") {
+                    o$criterion <- BIC(o)
+                    o$criterion.deviance <- aic - 2 * p
+                    o$criterion.penalty <- log(n) * p
+                } else {
+                    o$criterion.deviance <- aic - 2 * p
+                    o$criterion.penalty <- log(nsum) * p
+                    o$criterion <- o$criterion.deviance + o$criterion.penalty
+                }
             }
             if (criterion == "AICc") {
                 o$criterion.deviance <- aic - 2 * p

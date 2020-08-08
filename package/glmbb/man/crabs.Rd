@@ -2,7 +2,7 @@
 \docType{data}
 \alias{crabs}
 \title{Horseshoe Crab Mating Data}
-\usage{crabs}
+\usage{data(crabs)}
 \description{
   Data on horseshoe crabs (\emph{Limulus polyphemus}).  Response
   is number of males surrounding a breeding female, color (factor), condition
@@ -43,7 +43,7 @@ conditions or habitat selection.}
   Agresti, A. (2013)
   \emph{Categorical Data Analysis},
   Wiley, Hoboken, NJ., Section 4.3.2,
-  \url{http://www.stat.ufl.edu/~aa/cda/data.html}
+  \url{http://users.stat.ufl.edu/~aa/cda/data.html}
 
   Brockmann, H. J. (1996)
   Satellite Male Groups in Horseshoe Crabs, \emph{Limulus polyphemus},

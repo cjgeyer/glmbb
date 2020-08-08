@@ -53,11 +53,11 @@
  criteria.full <- unlist(criteria.full)
  length(fits)
  length(fits.full)
- min(criteria) == min(criteria.full)
+ all.equal(min(criteria), min(criteria.full))
  inies <- which(criteria.full <= min(criteria.full) + gout$cutoff)
  idx <- match(names(criteria.full)[inies], names(criteria))
  all(! is.na(idx))
- all(criteria.full[inies] == criteria[idx])
+ all.equal(criteria.full[inies], criteria[idx])
 
  # now BIC
 

@@ -1,0 +1,705 @@
+
+\documentclass[11pt]{article}
+
+\usepackage{indentfirst}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+\usepackage{url}
+
+\DeclareMathOperator{\rint}{rint}
+\DeclareMathOperator{\var}{var}
+\DeclareMathOperator{\diag}{diag}
+
+\let\code=\texttt
+
+\newtheorem{theorem}{Theorem}
+
+\newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
+\newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
+
+\begin{document}
+
+\title{Design Document for R package GLMBB}
+
+\author{Charles J. Geyer}
+
+\maketitle
+
+<<options,include=FALSE,echo=FALSE>>=
+options(keep.source = TRUE, width = 60)
+@
+
+\section{Introduction}
+
+This is an addendum to the other design document in this directory.
+It deals with the issues discussed in the GDOR document in this directory.
+
+We need to redesign R function \code{fitter} that is defined inside
+R function \code{glmbb} that is the main function in this package.
+We now want it to do limiting conditional models (LCM) as described in the
+GDOR document.
+
+To do that we need to restrict the models fitted to be exponential family
+models.  So we want either Poisson with log link or binomial with logit
+link, when thinking of our models as generalized linear models (GLM's).
+But our models could also
+be multinomial or product-multinomial.  We can think of these as Poisson
+GLM but conditioning on the sums over a certain partition of the data
+(multinomial conditions on the sum over the trivial partition).
+
+\begin{itemize}
+\item That partition can be specified by an additional R formula that has only
+one term specifying an ``interaction'' of categorical variables.
+We would really like the formula to have the form
+\begin{verbatim}
+~ 0 + foo : bar : baz : qux
+\end{verbatim}
+so it directly specifies the partition (marginal of the contingency table
+to condition on).
+\item   But perhaps we could also accept
+\begin{verbatim}
+~ foo * bar * baz * qux
+\end{verbatim}
+and convert this to the other formula before use.
+\item Or we could just accept a vector of factor names
+\begin{verbatim}
+c("foo", "bar", "baz", "qux")
+\end{verbatim}
+on grounds that that is the least confusing specification.
+\end{itemize}
+
+And now that we have got this far, we see that Bernoulli and binomial
+are just special cases of product multinomial, so they fit in this scheme
+too.  Theoretically, all of the models we want to do are categorical with
+Poisson, multinomial, or product multinomial sampling model.  We may want
+to provide a special interface for Bernoulli or binomial models, but we
+don't need special theory for them.
+
+\section{Theory}
+
+\subsection{Sampling Schemes}
+
+We incorporate the theory expounded in Section~7 of the Stat 5421 course
+notes on exponential families \citet{expfam}.  By Poisson sampling, we
+mean we have a GLM with Poisson ``family'' and log ``link'' in the
+terminology of R function \code{glm}.  It could be fit using that function.
+Its log likelihood is
+\begin{equation} \label{eq:logl-poisson}
+   l(\theta)
+   =
+   \sum_{i \in I} \bigl( y_i \theta_i - e^{\theta_i} \bigr)
+\end{equation}
+
+By multinomial we mean a Poisson model, as just described, conditioned on
+the sum of the response vector being equal to its observed value.
+This gives us what is
+called the ``Try III'' parameterization of the multinomial distribution
+in Section~2.4.3 of \citet{expfam}.  This is not an identifiable
+parameterization but we need to use it if we are to match up the theory
+of Poisson and multinomial (using the same canonical parameterization
+for both).
+
+By product multinomial we mean a Poisson model, as just described,
+conditioned on sums of components of the response vector over a certain
+partition $\mathcal{A}$ of the index set of the response vector, that is,
+the unconditional distribution of the response vector $y$ is independent
+Poisson and the product multinomial model conditions this Poisson model on
+\begin{equation} \label{eq:conditioning}
+   s_A = \sum_{i \in A} y_i, \qquad A \in \mathcal{A},
+\end{equation}
+being equal to their observed values.
+
+The multinomial model is the special case of the product multinomial model
+where the partition is trivial: $\mathcal{A} = \{I\}$, where $I$ is the
+index set of the response vector.  So we need not deal with multinomial
+sampling explicitly.
+
+The notes \citep{expfam} do, however, complicate things, by considering
+various different product multinomial models for the same data.
+If $\mathcal{A}$ and $\mathcal{B}$ are both partitions of $I$, we say
+that $\mathcal{A}$ is \emph{finer} than $\mathcal{B}$ or
+that $\mathcal{B}$ is \emph{coarser} than $\mathcal{A}$
+if for every $A \in \mathcal{A}$ there exists a $B \in \mathcal{B}$
+such that $A \subset B$.
+
+We can specify the product multinomial for the finer partition $\mathcal{A}$
+in two ways.  The first way we have already done: condition the Poisson model
+on \eqref{eq:conditioning}.  The second way is to condition the product
+multinomial model for the coarser partition $\mathcal{B}$
+on \eqref{eq:conditioning}.
+\begin{theorem} \label{th:conditioning}
+Conditioning a Poisson model on \eqref{eq:conditioning} gives a product
+multinomial model.  Its log likelihood is
+\begin{equation} \label{eq:conditioning-logl}
+   l(\theta)
+   =
+   \left(\sum_{i \in I} y_i \theta_i \right)
+   -
+   \sum_{A \in \mathcal{A}}
+   s_A \log \left( \sum_{j \in A} e^{\theta_j} \right)
+\end{equation}
+where $y$ is the canonical statistic vector (response vector)
+and $\theta$ is the canonical parameter vector of the Poisson model.
+  Conditioning a product multinomial model on a finer
+partition gives another product multinomial model.
+\end{theorem}
+\begin{proof}
+The joint distribution for the Poisson model has probability mass function
+(PMF)
+\begin{equation} \label{eq:conditioning-joint}
+   f(y)
+   =
+   \prod_{i \in I} \frac{\mu_i^{y_i}}{y_i !} e^{- \mu_i}
+\end{equation}
+where $y$ is the response vector having components $y_i$,
+where $\mu$ is the mean value parameter vector having components $\mu_i$.
+
+The random variables in \eqref{eq:conditioning} are also Poisson because
+sum of independent Poisson is Poisson \citep[Slides~53--55]{calculus},
+and they are independent because $\mathcal{A}$ is a partition.
+So these $s_A$ are independent Poisson random variables and
+$$
+   E(s_A) = \sum_{i \in A} \mu_i, \qquad A \in \mathcal{A}.
+$$
+Let $s$ denote the vector of these sums (having index set $\mathcal{A}$).
+Then the conditional distribution of $s$ given $y$ is completely degenerate.
+Hence the joint PMF of $s$ and $y$, denoted $f(s, y)$, is given
+by the right-hand side of \eqref{eq:conditioning-joint}.
+Write $\mu_A = E(s_A)$, $A \in \mathcal{A}$.
+Then the marginal distribution of $s$ is
+\begin{equation} \label{eq:marginal-of-s}
+   f(s)
+   = \prod_{A \in \mathcal{A}} \frac{\mu_A^{s_A}}{s_A !} e^{- \mu_A}
+\end{equation}
+and conditional is joint over marginal
+\begin{align*}
+   f(y \mid s)
+   & =
+   \frac{\displaystyle \prod_{i \in I} \frac{\mu_i^{y_i}}{y_i !} e^{- \mu_i}}
+   {\displaystyle
+   \prod_{A \in \mathcal{A}} \frac{\mu_A^{s_A}}{s_A !} e^{- \mu_A}}
+   \\
+   & =
+   \prod_{A \in \mathcal{A}} \frac{s_A !}{\prod_{i \in A} y_i !}
+   \prod_{i \in A} \left( \frac{\mu_i}{\mu_A} \right)^{y_i}
+\end{align*}
+which is the product of PMF's of multinomial distributions.
+That proves the first assertion of the theorem.
+
+These multinomial
+distributions have sample sizes $s_A$ and success probability vectors
+$$
+   \frac{\mu_i}{\sum_{j \in A} \mu_j}, \qquad i \in A.
+$$
+Expressing these in terms of the canonical parameter vector $\theta$
+of the Poisson model, which has components $\theta_i = \log(\mu_i)$, we have
+\begin{equation} \label{eq:conditioning-on-s}
+   f(y \mid s)
+   =
+   \prod_{A \in \mathcal{A}} \frac{s_A !}{\prod_{i \in A} y_i !}
+   \prod_{i \in A} \left( \frac{e^{\theta_i}}{\sum_{j \in A} e^{\theta_j}}
+   \right)^{y_i}
+\end{equation}
+Taking logs and dropping additive terms that do not contain the parameters
+gives \eqref{eq:conditioning-logl}.  That proves the second assertion of
+the theorem.
+
+The third assertion of the theorem is a triviality,
+which is hard to express in
+mathematical notation because of its very triviality.
+Define a vector $t$ that is like $s$ except it is for $\mathcal{B}$
+$$
+   t_B = \sum_{i \in B} y_i
+   = \sum_{\substack{A \in \mathcal{A} \\ A \subset B}} s_A,
+   \qquad B \in \mathcal{B}.
+$$
+We now want to show that if we take the conditional distribution of $y$
+given $t$ and further condition on $s$ that this is the same distribution
+as the conditional distribution of $y$ given $s$.  But there is no
+mathematical notation for ``further'' conditioning.  It is just conditioning.
+We get $f(y \mid s, t)$ either way, conditioning in one step or two steps,
+in more detail, conditioning in two steps is
+\begin{align*}
+   f(y \mid s, t)
+   & =
+   \frac{f(y, s \mid t)}{f(s \mid t)}
+   \\
+   & =
+   \frac{\frac{f(y, s, t)}{f(t)}}{\frac{f(s, t)}{f(t)}}
+   \\
+   & =
+   \frac{f(y, s, t)}{f(s, t)}
+\end{align*}
+and conditioning in one step goes directly from the first expression to
+the last.  Since $t$ is a deterministic function of $s$, we have
+$f(y \mid s, t) = f(y \mid s)$.
+\end{proof}
+
+\subsection{Canonical Affine Submodels and Maximum Likelihood}
+
+We incorporate by reference Section~4.6 of \citet{expfam} and
+Section~3.9 of \citet{gdor} about canonical affine submodels
+of regular full exponential families and Section~2 of \citet{infinity}
+and Sections~3.3, 3.4, and~3.9 of \citet{gdor} about directions of recession,
+directions of constancy, and limiting conditional models, also called
+Barndorff-Nielsen completion.
+
+The following is an improvement of Theorems~4, 5, and~{6} in \citet{expfam}
+and of Section~{3.17} in \citet{gdor}.
+\begin{theorem} \label{th:mle}
+Consider a categorical data model with response vector $y$
+and a canonical affine submodel with offset vector $a$ and model matrix $M$
+under either Poisson sampling or product multinomial sampling determined by
+the partition $\mathcal{A}$, and suppose each indicator vector
+for an element of $\mathcal{A}$ is in the column space of $M$.
+The MLE always exists in the Barndorff-Nielsen completion of the model.
+
+The MLE for the saturated model mean value parameter vector $\mu = E(y)$ and
+the submodel mean value parameter vector $\tau = M^T \mu$ are always unique
+and always satisfy the observed-equals-expected property
+$\hat{\tau} = M^T \hat{\mu} = M^T y$.  Hence these are the same for both
+sampling schemes.
+
+The MLE for the submodel canonical parameter vector $\beta$ and
+saturated model canonical parameter vector $\theta = a + M \beta$ need
+not be unique.  They will never be unique except for Poisson sampling
+when the MLE exists in the original model (rather than in the completion)
+and the model matrix has full column rank.  But any MLE $\hat{\beta}$
+for Poisson sampling is also an MLE for product multinomial sampling,
+and similarly for $\hat{\theta}$.
+
+The limiting conditional model (LCM) is always unique for either Poisson or
+product multinomial sampling.  The generic direction of recession (GDOR) that
+determines the LCM is nonunique and may be different for Poisson and 
+product multinomial sampling.  But any GDOR for Poisson sampling is also
+a GDOR for product multinomial sampling.
+\end{theorem}
+\begin{proof}
+Existence of the MLE in the completion is Theorem~{2.7} in \citet{thesis}
+and the supremum of the log likelihood always being finite because the family
+is discrete.  It also follows from Theorem~{7} in \citet{gdor}.
+
+The observed-equals-expected property comes from the fact that
+the log likelihood for an exponential family is concave so any
+point where the first derivative is zero is a (not necessarily unique)
+global maximizer of the log likelihood, and that first derivative is
+\begin{align*}
+   \nabla l(\beta)
+   & =
+   M^T \bigl[ y - \nabla c(a + M \beta) \bigr]
+   \\
+   & =
+   M^T \bigl[ y - E_\beta(y) \bigr]
+\end{align*}
+So the MLE $\hat{\beta}$ in either the original model or the LCM satisfies
+$$
+   M^T y = M^T E_{\hat{\beta}}(y)
+$$
+and by invariance of maximum likelihood, the MLE for the mean value parameters
+satisfy
+$$
+   M^T y = M^T \hat{\mu} = \hat{\tau}
+$$
+(That the LCM is an exponential family so this is as true for either follows
+from the discussion following Theorem~{6} in \citet{gdor}.)
+
+Expectation does not mean the same thing in the two models: any $\beta$ that
+satisfies
+\begin{subequations}
+\begin{equation} \label{eq:likelihood-equations-poisson}
+   M^T \bigl[ y - E_\beta(y) \bigr]
+\end{equation}
+is an MLE for Poisson sampling, and any $\beta$ that satisfies
+\begin{equation} \label{eq:likelihood-equations-product-multinomial}
+   M^T \bigl[ y - E_\beta(y \mid s) \bigr]
+\end{equation}
+\end{subequations}
+is an MLE for product multinomial sampling, where $s$ is (as above)
+the vector having components $s_A$ defined by \eqref{eq:conditioning}.
+Now in \eqref{eq:likelihood-equations-poisson} and
+\eqref{eq:likelihood-equations-product-multinomial} expectation means the
+same thing ($y$ has independent Poisson components).
+We would not get the same MLE expected values for both models if we did
+not impose the condition that the indicator vectors for elements
+of $\mathcal{A}$ are in the column space of $M$, which implies the vector
+$s$ is a deterministic function of $M^T y$ (actually a linear function).
+Hence \eqref{eq:likelihood-equations-poisson} matches $s$ to its observed value
+and then Theorem~\ref{th:conditioning} implies
+\begin{equation} \label{eq:observed-equals-expected}
+   M^T y = M^T E_{\hat{\beta}}(y) = M^T E_{\hat{\beta}}(y \mid s).
+\end{equation}
+
+If $\delta$ is a direction of recession (DOR) for Poisson sampling, then it
+is also a DOR for product multinomial sampling because conditioning reduces
+the sample space, that is, $(Y - y)^T M \delta \le 0$ almost surely under
+Poisson sampling implies the same holds under product multinomial sampling.
+The argument about GDOR follows that of Section~{3.17} of \citet{gdor},
+which only does multinomial sampling and leaves product multinomial as an
+exercise for the reader.  But we can do that exercise using the same argument
+and the same notation.  Let $C_{\text{sub}, P}$ be the convex support for
+Poisson sampling and $C_{\text{sub}, M}$ be the convex support for product
+multinomial sampling.  Then,
+because $C_{\text{sub}, M} \subset C_{\text{sub}, P}$ we have
+$T_{C_{\text{sub}, M}}(M^T y) \subset T_{C_{\text{sub}, P}}(M^T y)$
+and $N_{C_{\text{sub}, M}}(M^T y) \supset N_{C_{\text{sub}, P}}(M^T y)$
+hence $\rint N_{C_{\text{sub}, M}}(M^T y)
+\supset \rint N_{C_{\text{sub}, P}}(M^T y)$.
+So every GDOR for Poisson sampling is also a GDOR for product multinomial
+sampling.
+
+The assertion about MLE for $\beta$ follows
+from \eqref{eq:observed-equals-expected} holding when both occurences
+of $\hat{\beta}$ are any MLE for the Poisson model, when the MLE occurs
+in the original model.  When the MLE occur in the LCM for each model,
+the fact that we can use the same GDOR means we can use the same conditioning
+to define the LCM for both models, the conditioning $y \in H$ in
+Theorem~{6} in \citet{gdor}.  Then we use the same argument used at the
+end of the proof of Theorem~\ref{th:conditioning} that says that conditioning
+in stages is the same as conditioning all at once, so the analog of
+\eqref{eq:observed-equals-expected} for the LCM is
+\begin{equation} \label{eq:observed-equals-expected-lcm}
+   M^T y = M^T E_{\hat{\beta}}(y \mid y \in H)
+   = M^T E_{\hat{\beta}}(y \mid s, y \in H).
+\end{equation}
+\end{proof}
+
+\subsection{Binomial versus Product Multinomial}
+
+But if we want to consider binomial as a special case
+of product multinomial, there are some things to work out.
+Suppose we have a canonical affine submodel that is binomial with logit link.
+We double if the input response vector is a two-column matrix \code{y}, then
+that matrix stretched out as a vector by
+\begin{verbatim}
+ypm <- as.vector(y)
+\end{verbatim}
+is the response vector of the corresponding product multinomial model, and
+the factor that specifies which margins to condition on is
+\begin{verbatim}
+case <- factor(as.vector(rows(y)))
+\end{verbatim}
+Now we have to figure out how the canonical affine submodels match up.
+The user of the binomial thinks the dimension of the model is $n$ equals
+\code{nrow(y)} and has specified (using a formula) a canonical affine
+submodel
+\begin{equation} \label{eq:canonical-affine-submodel}
+   \theta = a + M \beta
+\end{equation}
+where $\theta$ and $a$ are vectors of length $n$ and the model matrix $M$
+has row dimension $n$.  Our new product multinomial model has $\theta$ of
+length $2 n$ the same length as the new response vector, but because of
+the conditioning every sum $\theta_i + \theta_{n + i}$ is not identifiable.
+So we can set $\theta_i = 0$ for $i > n$ if we please to gain identifiability.
+Then we can use the user's idea of the canonical affine submodel
+\eqref{eq:canonical-affine-submodel} to specify the first $n$ components
+of our new vector $\theta$.  So the question is: does that make sense?
+
+The user thinks we are going to use the binomial log likelihood
+$$
+   l(\theta) =
+   \sum_{i = 1}^n \bigl[ y_i \theta_i +
+   (y_i + y_{n + i}) \log(1 + e^{\theta_i})
+   \bigr]
+$$
+but actually, we are going to use the product multinomial log likelihood.
+Oh!  When $\theta_i = 0$ for $i > n$ that is exactly the same formula.
+So that's OK.
+
+\subsection{Poisson versus Product Multinomial}
+
+But we also want to consider fitting product multinomial models using the
+Poisson log likelihood.  Theorem~\ref{th:mle} above says we can do this
+so long as we add the indicator vectors for the conditioning partition to
+the model matrix.  As in the preceding section, we need to see how what
+we are actually doing matches up with what the user thinks we are doing.
+
+Now the issue is not what it was in the preceding section, changing the
+length of $y$ and $\theta$.  Now it is adding a term to the formula.
+Suppose, as in the preceding section, but generalizing beyond that special
+case \code{cases} is a factor that determines the partition $\mathcal{A}$
+for the product multinomial (that is, the set of indices for which
+\code{cases} has a particular value is an element of $\mathcal{A}$
+and vice versa).  Thus, if the formula the user supplies (thinking it
+would go with the product multinomial log likelihood
+\eqref{eq:conditioning-logl}) is, for example,
+\begin{verbatim}
+y ~ foo + bar + baz * qux
+\end{verbatim}
+then we are actually going to use the Poisson log likelihood
+\eqref{eq:logl-poisson} with the formula
+\begin{verbatim}
+y ~ cases + foo + bar + baz * qux
+\end{verbatim}
+The user does not expect to see any coefficients for \code{cases} so we
+put them in, do maximum likelihood, and then take them out before showing
+the user any results.  Also standard errors should agree with the product
+multinomial (and our theorems didn't say anything about standard errors,
+so we have to consider that).
+
+We know from the theory above that our Poisson fit finds the
+unique MLE for mean value parameters (both kinds) and not necessarily
+unique MLE for canonical parameters (both kinds).  We also know from
+the theory of directions of constancy that the components of $\beta$
+corresponding to \code{cases} are not identifiable when we think we
+are doing product multinomial sampling.  Thus we can set such components
+of $\beta$ to zero and not report them.  And we are back to the estimates
+the user expects.
+
+Note that the ``intercept'' that R puts in the model is one of the components
+of $\beta$ corresponding to \code{cases} that is not identifiable under
+product multinomial sampling.  So the user may expect an ``intercept'' because
+the formula above normally has one, but the user isn't going to get an
+intercept or will have the intercept row but with all \code{NA} values
+(as R generic function \code{summary} typically does to indicate
+non-identifiable parameters that it drops).
+
+Of course, if the model indicated by the formula supplied by the user
+has other non-identifiability issues (even under product multinomial sampling),
+then there may be more than one row of \code{NA} values.  We only dealt
+with the intercept especially because it will always be \code{NA}.
+
+Now for standard errors.  Fisher information for Poisson sampling is
+$$
+   I(\theta) = \var_\theta(y) = \diag(\mu)
+$$
+where $\theta$ is the saturated model canonical parameter and $\mu$ is
+the saturated model mean value parameter given by $\mu_i = e^{\theta_i}$
+for all $i$.
+And Fisher information for product multinomial sampling is
+$$
+   I(\theta) = \var_\theta(y \mid s)
+$$
+where $s$ is (as above) the vector whose components are $s_A$ defined by
+\eqref{eq:conditioning}.  Since we know the distribution of $y$ given $s$
+is product multinomial, we can just write down its variance matrix.
+For $i \in A$ we have
+$$
+   I(\theta)_{i i} = s_A p_i (1 - p_i)
+$$
+where
+$$
+   p_i = \frac{e^{\theta_i}}{\sum_{k \in A} e^{\theta_k}}
+$$
+and for $i, j \in A$ we have
+$$
+   I(\theta)_{i j} = - s_A p_i p_j
+$$
+and for $i \in A$ and $j \notin A$ we have
+$$
+   I(\theta)_{i j} = 0
+$$
+by independence (of the different terms in the product
+of the product multinomial).
+
+And Fisher information for $\beta$ is $M^T I(\theta) M$,
+and even though $I(\theta)$ is not invertible, this will be invertible
+if we have dropped columns of $M$ corresponding to non-identifiable
+components of $\beta$.
+
+Let us just check on one particular data set.
+<<death-data>>=
+victim <- factor(rep(c("white", "black"), each = 2))
+defendant <- factor(rep(c("white", "black"), times = 2))
+deathpenalty <- matrix(c(53, 11, 0, 4, 414, 37, 16, 139),
+        ncol = 2, dimnames = list(NULL, c("yes", "no")))
+@
+\pagebreak[3]
+We check that our data matches the data in \citet[Table~2.6]{agresti}.
+<<death-data-show>>=
+data.frame(victim, defendant, deathpenalty)
+@
+First we fit this with logistic regression.
+<<death-data-fit-binomial>>=
+gout.binomial <- glm(deathpenalty ~ victim + defendant,
+    family = binomial, x = TRUE)
+summary(gout.binomial)
+@
+Now we want to refit the data using Poisson regression for this we make
+the factor \code{cases} as above and turn the response vector into an actual
+vector.
+<<death-data-fit-poisson>>=
+pdata <- data.frame(verdicts = as.vector(deathpenalty),
+    victim = rep(victim, times = 2),
+    defendant = rep(defendant, times = 2),
+    deathpenalty = rep(1:0, each = 4))
+pdata
+gout.poisson <- glm(verdicts ~ victim * defendant +
+    deathpenalty : (victim + defendant), family = poisson,
+    data = pdata, x = TRUE)
+summary(gout.poisson)
+@
+
+But that is not what we want to report to the user.  Only the coefficients
+containing ``deathpenalty'' are relevant.  The others were just included
+to get the right answer.
+
+So first we check that we did indeed get the correct answer.
+<<check-mu>>=
+n <- rowSums(deathpenalty)
+p <- predict(gout.binomial, type = "response")
+mu.binomial <- c(n * p, n * (1 - p))
+mu.poisson <- predict(gout.poisson, type = "response")
+all.equal(mu.binomial, mu.poisson, check.attributes = FALSE)
+@
+
+Now we work on the coefficients.
+<<redo-coefficients>>=
+sout.poisson <- summary(gout.poisson)
+sout.poisson.coef <- sout.poisson$coef
+i <- grep("deathpenalty", rownames(sout.poisson.coef))
+sout.poisson.coef <- sout.poisson.coef[i, ]
+rownames(sout.poisson.coef) <-
+    sub(":deathpenalty", "", rownames(sout.poisson.coef))
+printCoefmat(sout.poisson.coef)
+@
+
+
+
+
+
+\subsection{Hypothesis Tests}
+
+\subsubsection{Wilks Tests}
+
+Also called likelihood ratio tests and analysis of deviance.
+\begin{theorem}
+Under the assumptions of Theorem~\ref{th:mle},
+the likelihood for Possion sampling also serves as a likelihood for
+product multinomial sampling (they differ by a constant).
+\end{theorem}
+\begin{proof}
+When the MLE is in the original model, this is Theorem~{7} in \citet{expfam}.
+When the MLE is in the LCM, this follows from the LCM likelihood being
+a limit of the likelihood in the original model.
+\end{proof}
+
+\subsubsection{Rao Tests}
+
+Also called score tests, Langrange multiplier tests, and Pearson chi-square
+tests.
+Our basic reference is the Stat 8112 lecture notes on hypothesis tests
+\citet{wilks-wald-rao}.
+
+The Rao test statistic for categorical data analysis has the form.
+$$
+   (y - \hat{\mu})^T \var(y)^{-1} (y - \hat{\mu})
+$$
+where $\var(y)$ denotes the estimated variance of $y$ with the MLE plugged
+in for the parameters.
+With Poisson sampling, $\var(y)$ is diagonal with diagonal components
+$\hat{\mu}_i$.  So this becomes
+$$
+   \sum_{i \in I} \frac{(y_i - \hat{\mu}_i)^2}{\hat{\mu}_i}
+$$
+which is Pearson's chi-square statistic.  This is for the goodness-of-fit
+test of the model whose MLE is $\hat{\mu}$ versus the saturated model.
+
+But Rao tests are more general than that.  Consider any two canonical
+affine submodels with model equations
+\begin{align*}
+   \theta & = a_\text{big} + M_\text{big} \beta
+   \\
+   \theta & = a_\text{little} + M_\text{little} \beta
+\end{align*}
+where $\theta$ has the same meaning in both equations (saturated model
+canonical parameter vector) but $\beta$ is different in the two equations.
+It is, of course, the submodel canonical parameter vector in both equations,
+but for different models.  Since $M_\text{big}$ typically has more columns
+than $M_\text{little}$, the two betas typically do not even have the same
+dimension.
+
+In order for a Wilks or Rao test to be valid, the models must be nested.
+Let $V_\text{big}$ denote the column space of $M_\text{big}$ and similarly
+for $V_\text{little}$.  Then the nesting conditions are
+\begin{gather*}
+   V_\text{little} \subset V_\text{big}
+   \\
+   a_\text{little} - a_\text{big} \in V_\text{big}
+\end{gather*}
+Let
+$$
+   I(\theta) = \var_\theta(y)
+$$
+denote Fisher information for the saturated model canonical
+parameter under Poisson sampling.  Let $\hat{\mu}_\text{little}$ and
+$\hat{\mu}_\text{big}$ denote the MLE for $\theta$ in the two models,
+and similarly for the other parameters.  Then the Rao test statistic
+for comparing the two models is
+$$
+   (y - \hat{\mu}_\text{little})^T M_\text{big}
+   \left( M_\text{big}^T I(\hat{\theta}_\text{little}) M_\text{big} \right)^{-1}
+   M_\text{big}^T 
+   (y - \hat{\mu}_\text{little})
+$$
+This expression works when the matrix in big parens is actually invertible.
+Otherwise, we replace the inverse with a generalized inverse \citep{moore}.
+
+
+\begin{thebibliography}{}
+
+\bibitem[Agresti(2013)]{agresti}
+Agresti, A. (2013).
+\newblock \emph{Categorical Data Analysis}, third edition.
+\newblock John Wiley \& Sons, Hoboken.
+
+\bibitem[Geyer(1990)]{thesis}
+\newblock Likelihood and Exponential Families.
+\newblock PhD thesis, University of Washington.
+\newblock \url{http://hdl.handle.net/11299/56330}.
+
+\bibitem[Geyer(2009)]{gdor}
+Geyer, C.~J. (2009).
+\newblock Likelihood inference in exponential families and directions of
+    recession.
+\newblock \emph{Electronic Journal of Statistics}, \textbf{3}, 259--289
+    (electronic).
+\newblock \url{http:www.stat.umn.edu/geyer/gdor/}.
+
+\bibitem[Geyer(2012)]{wilks-wald-rao}
+Geyer, C.~J. (2012).
+\newblock Stat 8112 Lecture Notes: The Wilks, Wald, and Rao Tests.
+\newblock \url{http://www.stat.umn.edu/geyer/8112/notes/tests.pdf}.
+
+\bibitem[Geyer(2016a)]{expfam}
+Geyer, C.~J. (2016a).
+\newblock Stat 5421 Lecture Notes: Exponential Families, Part I.
+\newblock \url{http://www.stat.umn.edu/geyer/5421/notes/expfam.pdf}.
+
+\bibitem[Geyer(2016b)]{infinity}
+Geyer, C.~J. (2016b).
+\newblock Stat 5421 Lecture Notes: Exponential Families, Part II.
+\newblock \url{http://www.stat.umn.edu/geyer/5421/notes/infinity.pdf}.
+
+\bibitem[Geyer(2016c)]{calculus}
+Geyer, C.~J. (2016c).
+\newblock Stat 5101 Lecture Slides: Deck~3: Probability and Expectation
+    on Infinite Sample Spaces, Poisson, Geometric, Negative Binomial,
+    Continuous Uniform, Exponential, Gamma, Beta, Normal, and Chi-Square
+    Distributions.
+\newblock \url{http://www.stat.umn.edu/geyer/5101/slides/s3.pdf}.
+
+\bibitem[Geyer(2016d)]{multivariate}
+Geyer, C.~J. (2016d).
+\newblock Stat 5101 Lecture Slides: Deck~5: Conditional Probability
+    and Expectation, Poisson Process, Multinomial and Multivariate Normal
+    Distributions.
+\newblock \url{http://www.stat.umn.edu/geyer/5101/slides/s5.pdf}.
+
+\bibitem[Geyer(2020)]{expfam8054}
+Geyer, C.~J. (2020).
+\newblock Stat 8054 Lecture Notes: Exponential Families.
+\newblock \url{http://www.stat.umn.edu/geyer/8054/notes/expfam.html}.
+
+\bibitem[Moore(1977)]{moore}
+Moore, D.~S. (1977).
+\newblock Generalized inverses, Wald's method, and the construction
+    of chi-squared tests of fit.
+\newblock \emph{Journal of the American Statistical Association},
+    \textbf{72}, 131--137.
+
+\end{thebibliography}
+
+\end{document}
