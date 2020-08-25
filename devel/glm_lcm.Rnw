@@ -1,0 +1,209 @@
+
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{indentfirst}
+\usepackage{natbib}
+\usepackage{url}
+
+\let\code=\texttt
+
+\newcommand{\opand}{\mathbin{\rm and}}
+
+\begin{document}
+
+\title{Design of an R function to do Limiting Conditional Models
+for Generalized Linear Models and Log-Linear Models}
+
+\author{Charles J. Geyer}
+
+\maketitle
+
+<<options,include=FALSE,echo=FALSE>>=
+options(keep.source = TRUE, width = 60)
+@
+
+\section{Introduction}
+
+This is the design document for an R function to fit generalized linear
+models that are discrete exponential families and log-linear models for
+contingency tables (all of which are exponential families) and do the
+right thing when the solution is ``at infinity'' \citep{geyer-gdor}.
+
+\begin{itemize}
+\item
+When the family is specified to be \code{"poisson"} (unlike R function
+\code{glm} only a character string value of this argument is allowed)
+our function should work just like R function \code{glm} with argument
+\code{family = "poisson"} (so the link function is automatically the
+default log link) except that when the maximum likelihood estimate does
+not exist in the conventional sense (the solution is ``at infinity'')
+our function finds a generalized direction of recession (GDOR)
+\citep{geyer-gdor},
+fits the limiting conditional model (LCM) \citep{geyer-gdor}, and
+returns an object of class \code{c("lcm", "glm", "lm")} that includes
+the GDOR and the LCM model fit.
+\item
+When the family is specified to be \code{"binomial"} (unlike R function
+\code{glm} only a character string value of this argument is allowed)
+our function should work just like R function \code{glm} with argument
+\code{family = "binomial"} (so the link function is automatically the
+default logit link) except that when the maximum likelihood estimate does
+not exist in the conventional sense (the solution is ``at infinity'')
+our function finds a GDOR, fits the LCM, and
+returns an object of class \code{c("lcm", "glm", "lm")} that includes
+the GDOR and the LCM model fit.
+
+Like R function \code{glm} our function should handle both Bernoulli response
+(the response vector is zero-or-one-valued) or general binomial response
+(the response ``vector'' is actually a two-column matrix of counts, the
+first column the count of successes for each case and the
+second column the count of failures for each case).
+\item
+When the family is specified to be \code{"multinomial"} our function should
+fit the models describe in Section~8.1 of \citet{agresti}.
+
+Like R function \code{multinom} in R package \code{nnet}, which is a so-called
+recommended package that is installed by default in every installation of R,
+our function should handle both factor response (the response vector is an
+R object of class \code{"factor"}) or general multinomial response
+(the response ``vector'' is actually a matrix of counts, each column the count
+for one category of the categorical response).
+\end{itemize}
+
+\section{Alligators}
+
+For an example of multinomial regression we will use the alligator food
+choice from \citet[Table~8.1]{agresti}
+<<alligator-data>>=
+library("CatDataAnalysis")
+data("table_8.1")
+names(table_8.1)
+@
+In these data the response vector is \code{count} and the categories of
+response are \code{food}, which is categorical
+<<alligator-data-response-categories>>=
+sapply(table_8.1, class)
+sapply(table_8.1, max)
+@
+We guess these integer values are in the order they occur in the table
+published in the book.
+<<alligator-data-fixup>>=
+table_8.1 <- transform(table_8.1,
+    lake = c("Hancock", "Oklawaha", "Trafford", "George")[lake])
+table_8.1 <- transform(table_8.1,
+    gender = c("Male", "Female")[gender])
+table_8.1 <- transform(table_8.1,
+    size = c("less_than_2.3", "greater_than_2.3")[size])
+table_8.1 <- transform(table_8.1,
+    food = c("Fish", "Invertebrate", "Reptile", "Bird", "Other")[food])
+sapply(table_8.1, class)
+@
+
+We check that we have some data values shown in the table correct
+<<alligator-data-fixup-check>>=
+subset(table_8.1, lake == "Hancock" & gender == "Male"
+    & size == "less_than_2.3")
+subset(table_8.1, lake == "George" & gender == "Female"
+    & size == "greater_than_2.3")
+@
+Seems like we are OK in that we have gotten the first and last lines of the
+table in the book correct.  We could, of course, check some other lines
+if we thought we needed to.
+
+We know (\citealp[Section~2.1.5]{agresti}; \citealp[Section~7]{expfam})
+that we can fit the model assuming
+Poisson sampling, multinomial sampling or product-multinomial sampling and
+convert the results from one sampling scheme to the other.
+
+Officially, our model is product-multinomial.  Every sum over the food
+category (for each possible values of the other variables) is fixed rather
+than random.  Another way of saying this is that the
+\code{lake:gender:size} margin is fixed.
+
+This means we must have \code{lake:gender:size} in the formula for every
+model we fit if we use Poisson sampling.  And if we are thinking the formula
+has some expression \code{foo} on the right-hand side, we need to have
+\code{food:foo} in our formula if we use Poisson sampling.
+For example, the models fit in Table~8.2 of \citet{agresti} are
+<<fit-models>>=
+f <- c(null = "", g = "gender", s = "size", l = "lake",
+    ls = "lake + size", lsg = "lake + size + gender")
+ff <- sapply(f, function(x) {
+    if(grepl("+", x, fixed = TRUE)) x <- paste0("(", x, ")")
+    if(x != "") x <- paste0(":", x)
+    paste0("count ~ lake:gender:size + food", x)
+})
+cbind(ff)
+mm <- lapply(ff, function(x) glm(as.formula(x),
+    family = "poisson", data = table_8.1))
+Gsq <- sapply(mm, function(x) x$deviance)
+Xsq <- sapply(mm, function(x) {
+    o <- x$y
+    e <- x$fitted.values
+    sum((o - e)^2 / e)
+})
+df <- sapply(mm, function(x) x$df.residual)
+foo <- data.frame(Gsq, Xsq, df)
+@
+
+\pagebreak[3]
+The following should match part of Table~{8.2} in \citet{agresti}.
+And it does.
+<<fit-models-output>>=
+print(foo, digits = 3)
+@
+
+Now we ignore all but the \code{lake + size} model
+<<model-ls-observed>>=
+xtabs(count ~ size + food + lake, data = table_8.1)
+@
+OK.  But we want to reorder the factor levels so it agrees with the book.
+<<model-ls-observed>>=
+table_8.1 <- transform(table_8.1, lake = factor(lake,
+    levels = c("Hancock", "Oklawaha", "Trafford", "George")))
+table_8.1 <- transform(table_8.1, size = factor(size,
+    levels = c("less_than_2.3", "greater_than_2.3")))
+table_8.1 <- transform(table_8.1, food = factor(food,
+    levels = c("Fish", "Invertebrate", "Reptile", "Bird", "Other")))
+xtabs(count ~ size + food + lake, data = table_8.1)
+@
+That agrees with the counts (numbers not in parentheses) in Table~{8.3}
+in \citet{agresti}.  Now we try for estimated expected counts (numbers
+in parentheses).
+<<model-ls-expected>>=
+m <- mm$ls
+e <- m$fitted.values
+print(xtabs(e ~ size + food + lake, data = table_8.1),
+    digits = 1)
+@
+OK.  So what is wanted is a more convenient way to fit models like this.
+
+\begin{thebibliography}{}
+
+\bibitem[Agresti(2013)]{agresti}
+Agresti, A. (2013).
+\newblock \emph{Categorical Data Analysis}, third edition.
+\newblock John Wiley \& Sons, Hoboken.
+
+\bibitem[Geyer(2009)]{geyer-gdor}
+Geyer, C.~J. (2009).
+\newblock Likelihood inference in exponential families and directions of
+    recession.
+\newblock \emph{Electronic Journal of Statistics}, \textbf{3}, 259--289
+    (electronic).
+
+\bibitem[Geyer(2016a)]{expfam}
+Geyer, C.~J. (2016a).
+\newblock Stat 5421 Lecture Notes: Exponential Families, Part I.
+\newblock \url{http://www.stat.umn.edu/geyer/5421/notes/expfam.pdf}.
+
+\bibitem[Geyer(2016b)]{infinity}
+Geyer, C.~J. (2016b).
+\newblock Stat 5421 Lecture Notes: Exponential Families, Part II.
+\newblock \url{http://www.stat.umn.edu/geyer/5421/notes/infinity.pdf}.
+
+\end{thebibliography}
+
+\end{document}
+

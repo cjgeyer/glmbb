@@ -222,9 +222,12 @@ And we think we are ready to solve the linear programming problem.
 <<clpAPI-solve>>=
 primalCLP(lp)
 getSolStatusCLP(lp)
-delta <- getColPrimCLP(lp)
 @
 Solution status = 0 means optimal.
+<<clpAPI-delta>>=
+delta <- getColPrimCLP(lp)
+@
+The solution is a generalized direction of recession (GDOR).
 
 <<print-dor>>=
 names(delta) <- names(gout$coefficients)
