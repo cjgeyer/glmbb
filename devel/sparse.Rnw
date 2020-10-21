@@ -10,6 +10,11 @@
 
 \newcommand{\opand}{\mathbin{\rm and}}
 
+\newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
+\newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
+
+%\VignetteEngine{knitr::knitr}
+
 \begin{document}
 
 \title{Generalized Directions of Recession for Generalized Linear Models}
@@ -242,6 +247,180 @@ And the last thing we do is destruct the model object.
 delProbCLP(lp)
 @
 
+\appendix
+
+We do a bigger example
+<<read-big-data>>=
+foo <- "https://conservancy.umn.edu/bitstream/handle/11299/197369/bigcategorical.txt"
+bar <- sub("^.*/", "", foo)
+if (! file.exists(bar))
+download.file(foo, bar)
+bigcategorical <- read.table(bar, header = TRUE, stringsAsFactors = TRUE)
+class(bigcategorical)
+dim(bigcategorical)
+names(bigcategorical)
+@
+Fit model specified in the paper
+(all 4 way and no 5 way interactions).
+<<big-data-fit,error=TRUE,cache=TRUE>>=
+library(biglm)
+gout <- bigglm(y ~ 0 + (x1 + x2 + x3 + x4 + x5)^4,
+    family = poisson(), data = bigcategorical, maxit = 200)
+gout$converged
+cout <- coef(gout)
+length(cout)
+@
+
+Now get mean-value parameters
+<<big-data-mean-value,error=TRUE,cache=TRUE>>=
+mu <- predict(gout, newdata = bigcategorical, type = "response")
+length(mu)
+foo <- log10(sort(mu))
+dfoo <- diff(foo)
+i <- which(dfoo == max(dfoo))
+i
+foo[seq(i - 2, i + 2)]
+is.zero <- mu < 1e-9
+max(mu[is.zero])
+min(mu[! is.zero])
+
+foo <- log10(sort(mu[! is.zero]))
+dfoo <- diff(foo)
+i <- which(dfoo == max(dfoo))
+i
+foo[seq(i, i + 4)]
+@
+Good enough we hope.  Now find direction of recession as above.
+<<sparse.model.matrix.bigcategorical>>=
+m <- sparse.model.matrix(
+    y ~ 0 + (x1 + x2 + x3 + x4 + x5)^4,
+    data = bigcategorical)
+dim(m)
+@
+Objective function gradient
+<<objgrd.bigcategorical>>=
+objgrd <- rbind(as.numeric(is.zero)) %*% m
+objgrd <- as(objgrd, "numeric")
+@
+Initialize CLP object
+<<clpAPI-initialize-bigcategorical>>=
+lp <- initProbCLP()
+@
+Set row number
+<<clpAPI-resize.bigcategorical>>=
+resizeCLP(lp, nrow(m), 0)
+@
+And also this, to shut up printout to standard error.
+<<clpAPI-blather.bigcategorical>>=
+setLogLevelCLP(lp, 0)
+@
+Add columns
+<<clpAPI-add-columns.bigcategorical>>=
+foo <- rep(Inf, ncol(m))
+addColsCLP(lp, ncol(m), -foo, foo, objgrd, m@p, m@i, m@x)
+@
+Set the row bounds
+<<clpAPI-row-bounds.bigcategorical>>=
+chgRowLowerCLP(lp, -as.numeric(is.zero))
+chgRowUpperCLP(lp, rep(0, nrow(m)))
+@
+Set optimization "direction" to minimize.
+<<clpAPI-minimize.bigcategorical>>=
+setObjDirCLP(lp, 1)
+@
+Solve
+<<clpAPI-solve.bigcategorical>>=
+lptime <- system.time(primalCLP(lp))
+getSolStatusCLP(lp)
+@
+Solution status = 0 means optimal.
+<<solution.time>>=
+lptime
+@
+
+The solution is a generalized direction of recession (GDOR)
+<<clpAPI-delta.bigcategorical>>=
+delta <- getColPrimCLP(lp)
+@
+
+Check that we have solution.  First map GDOR to saturated model
+canonical parameter scale.
+<<eta.bigcategorical>>=
+eta <- m %*% delta
+eta <- as(eta, "numeric")
+@
+
+Now check all components of $\eta$ nonnegative
+<<eta.check.one.bigcategorical>>=
+max(eta)
+@
+Inaccuracy of computer arithmetic strikes again.  I guess that's OK.
+
+Now check that $\eta_i < 0$ implies $y_i = 0$.
+Actually check the contrapositive: $y_i > 0$ implies $\eta_i = 0$.
+<<eta.check.two.bigcategorical>>=
+range(eta[bigcategorical$y > 0])
+range(eta[bigcategorical$y == 0])
+@
+Looks OK.
+
+What is the dimension of the linearity?
+<<linearity.bigcategorical>>=
+sum(abs(eta) < 1e-9)
+sum(abs(eta) >= 1e-9)
+@
+Does not look OK.  Looks like we have a DOR but not a GDOR.  This does
+not agree with the supplementary material for the paper from which these
+data were taken.  Try again.  Redefine \code{is.zero} to be just \code{y == 0}.
+<<big.data.is.zero>>=
+is.zero <- bigcategorical$y == 0
+@
+Now have to redo \code{objgrd}
+<<big.data.objgrd.too>>=
+objgrd <- rbind(as.numeric(is.zero)) %*% m
+objgrd <- as(objgrd, "numeric")
+chgObjCoefsCLP(lp, objgrd)
+@
+and row bounds of linear program
+<<big.data.row.bounds.too>>=
+chgRowLowerCLP(lp, -as.numeric(is.zero))
+@
+
+And re-solve
+<<clpAPI-solve.bigcategorical.too,cache=TRUE>>=
+lptime <- system.time(primalCLP(lp))
+getSolStatusCLP(lp)
+@
+Show time
+<<clpAPI-solve.bigcategorical.too.time>>=
+lptime
+@
+
+Get GDOR
+<<clpAPI-delta.bigcategorical.too>>=
+delta.save <- delta
+delta <- getColPrimCLP(lp)
+max(abs(delta - delta.save))
+@
+Looks like we have something different.   Redo checks.
+<<eta.bigcategorical.too>>=
+eta <- m %*% delta
+eta <- as(eta, "numeric")
+
+# check all components nonnegative
+max(eta)
+
+# check y[i] > 0 implies eta[i] == 0
+range(eta[bigcategorical$y > 0])
+range(eta[bigcategorical$y == 0])
+@
+Looks OK.
+
+What is the dimension of the linearity?
+<<linearity.bigcategorical.too>>=
+sum(abs(eta) < sqrt(.Machine$double.eps))
+sum(abs(eta) >= sqrt(.Machine$double.eps))
+@
 
 
 
