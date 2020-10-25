@@ -8,3 +8,6 @@
 *.pdf
 *.html
 gdor.R
+sparse.R
+cache
+bigcategorical.txt
