@@ -43,8 +43,6 @@ options(keep.source = TRUE, width = 60)
 \item The version of R used to make this document is \Sexpr{getRversion()}.
 \item The version of R package \code{knitr} used to make this document is
    \Sexpr{packageVersion("knitr")}.
-\item The version of R package \code{biglm} used to make this document is
-   \Sexpr{packageVersion("biglm")}.
 \item The version of R package \code{clpAPI} used to make this document is
    \Sexpr{packageVersion("clpAPI")}.
 \item The version of R package \code{Matrix} used to make this document is
@@ -131,7 +129,7 @@ See Theorem~6 and the following discussion in \citet{gdor} for discussion
 of limits in directions of recession and the resulting limiting conditional
 models.
 \begin{proof}
-As the discussion preceeding the theorem says, we have a DOR
+As the discussion preceding the theorem says, we have a DOR
 if and only if $\eta_j \le 0$ for all $j$ and $\eta_j < 0$ implies $y_j = 0$.
 Redoing that discussion with DOC instead of DOR, we have a DOC
 if and only if $\eta_j = 0$ for all $j$, that is, if $\delta$ is in the
@@ -147,66 +145,18 @@ is a DOR and the rest follows from Theorem~{6} in \citet{gdor} and the
 discussion following that theorem in that article.
 \end{proof}
 
-In fact we can do better than this if we have a fitted data vector $\hat{\mu}$
-from an attempt by R function \code{glm} (or some other likelihood maximizer)
-to maximize the likelihood.  From Theorem~{6} in \citet{gdor} we must have
-$(Y - y)^T M \delta = 0$ almost surely for the limiting conditional model.
-Hence we must have $(\mu - y)^T M \delta = 0$ almost surely.  Hence
-(still using $\eta = M \delta$) we must have $\eta_j < 0$ implies $\mu_j = 0$
-and, conversely, $\mu_j > 0$ implies $\eta_j = 0$.
-
-Due to inexactness of computer arithmetic and due to the approximateness
-of computer optimization routines, we can never tell whether what the computer
-reports as fitted values are zero or not.  We have to use a tolerance.
-To respect this issue we adopt the notation $\hat{\mu}_j \gg 0$ indicates
-that $\hat{\mu}_j$ is larger than the tolerance and $\hat{\mu}_j \simeq 0$
-indicates that $\hat{\mu}_j$ is not larger than the tolerance.
-Then we can use this linear program
-\begin{alignat}{2}
-  \text{minimize}   & \ \sum_{\substack{i \in I \\ \hat{\mu}_i \simeq 0}}
-      \sum_{j \in J} m_{i j} \delta_j
-  \nonumber
-  \\
-  \text{subject to} & \ \sum_{j \in J} m_{i j} \delta_j = 0,
-      & \qquad & i \in I \opand \hat{\mu}_i \gg 0
-  \label{prog:mu-hat}
-  \\
-                    & \ -1 \le \sum_{j \in J} m_{i j} \delta_j \le 0,
-      & & i \in I \opand \hat{\mu}_i \simeq 0
-  \nonumber
-\end{alignat}
-
-The fact that our tolerance may be wrong and we may be misclassifying
-some of the components of $\hat{\mu}$ as zero or nonzero does no harm
-so long as the tolerance is large enough.  If we decide $\hat{\mu}_j \simeq 0$
-when in fact $\mu_j > 0$, then our linear program just has to do more work
-but is not wrong.  Any solution is still a direction of recession.
-In fact, no matter what, we can still easily check whether a solution of
-our linear program is a direction of recession (just check that $\eta_j \le 0$
-for all $j$ and $\eta_j < 0$ implies $y_j = 0$).
-
-Note that with using $\hat{\mu}$ to determine the linear programming problem,
-there is often nothing to do.  If we have $\hat{\mu}_i \gg 0$ for all $i$ then
-the only directions of recession are vectors in the null space of $M$ and
-those are also directions of constancy, so the MLE exists in the classical
-sense.
-
-It is only when $\hat{\mu}_j \simeq 0$ for some $j$ (and typically R function
-\code{glm} issues a warning) that we have to follow up with doing a linear
-program.
-
 Although this linear program is guaranteed to find a DOR that is not a DOC
 if one exists, it is not guaranteed to find a \emph{generic} DOR \citep{gdor}.
-Thus this algorithm may need to be iterated.  The limiting conditional model
-it finds may itself have a DOR that is not a DOC, so we may need to apply
-the algorithm to it.
+Thus this algorithm may need to be iterated.
+We can change the objective function (only) of the linear program
+to seek other DOR that make other components of $\mu$ equal to zero that
+we have not yet found.
 
 \section{Practice}
 
 \subsection{R Packages}
 
 <<packages>>=
-library(biglm)
 library(clpAPI)
 library(Matrix)
 @
@@ -228,58 +178,23 @@ dim(bigcategorical)
 names(bigcategorical)
 @
 
-\subsection{Fit GLM}
-
-Fit model specified in the paper
-(all 4 way and no 5 way interactions).
-<<big.data.fit,error=TRUE,cache=TRUE>>=
-gout <- bigglm(y ~ 0 + (x1 + x2 + x3 + x4 + x5)^4,
-    family = poisson(), data = bigcategorical, maxit = 200)
-gout$converged
-cout <- coef(gout)
-length(cout)
-! any(is.na(cout))
-@
-The last statement says that, as far as R function \code{bigglm} can tell,
-there are no DOC in this model.
-
-\subsection{Mean-Value Parameters}
-
-Now get mean-value parameters
-<<big.data.mean.value,error=TRUE,cache=TRUE>>=
-mu <- predict(gout, newdata = bigcategorical,
-    type = "response")
-length(mu)
-@
-
-Now we check what are small and large values of components of $\mu$.
-<<big.data.mean.value.sizes>>=
-foo <- log10(sort(mu))
-dfoo <- diff(foo)
-i <- which(dfoo == max(dfoo))
-foo[seq(max(1, i - 2), min(length(foo), i + 2))]
-@
-Looks like we have a jump in $\mu$ components from roughly
-$10^{\Sexpr{round(foo[i])}}$ to $10^{\Sexpr{round(foo[i + 1])}}$.
-Anywhere in there will do as a cutoff.
-<<big.data.mean.value.is.zero>>=
-is.zero <- mu < sqrt(.Machine$double.eps)
-@
-
 \subsection{Model Matrix}
 
-R function \code{bigglm} does not use an explicit model matrix.
 We need the model matrix to construct the linear program.
 In order to not blow out memory, we use R function \code{sparse.model.matrix}
 from R package \code{Matrix}.
 <<sparse.model.matrix.bigcategorical>>=
-m <- sparse.model.matrix(
-    y ~ 0 + (x1 + x2 + x3 + x4 + x5)^4,
-    data = bigcategorical)
+m <- sparse.model.matrix(y ~ 0 + (.)^4, data = bigcategorical)
 dim(m)
 @
 
 \subsection{Linear Program Specification}
+
+\subsubsection{Zeros of Response Vector}
+
+<<zeros.bigcategorical>>=
+is.zero <- bigcategorical$y == 0
+@
 
 \subsubsection{Objective Function}
 
@@ -335,14 +250,23 @@ Solution status = 0 means optimal.
 lptime
 @
 
-The solution is a generalized direction of recession (GDOR)
+The solution is a direction of recession (DOR)
 <<clpAPI.delta.bigcategorical>>=
 delta <- getColPrimCLP(lp)
 @
 
+\subsection{Optimal Value}
+
+<<clpAPI.optimal.value.bigcategorical>>=
+getObjValCLP(lp)
+@
+This says that we have found a DOR that is not a DOC.
+So MLE do not exist in the conventional sense and we have
+to find the corresponding LCM.
+
 \subsection{Check Solution}
 
-Check that we have solution.  First map GDOR to saturated model
+Check that we have solution.  First map DOR to saturated model
 canonical parameter scale.
 <<eta.bigcategorical>>=
 eta <- m %*% delta
@@ -360,122 +284,289 @@ Actually check the contrapositive: $y_i > 0$ implies $\eta_i = 0$.
 <<eta.check.two.bigcategorical>>=
 range(eta[bigcategorical$y > 0])
 @
-Looks OK.
+Looks OK, but tolerance is very sloppy.  What is next lower?
+<<eta.check.three.bigcategorical>>=
+foo <- min(eta[bigcategorical$y > 0])
+range(eta[eta < foo])
+@
 
 \subsection{Linearity}
 
 Now we check what \citet{gdor} calls the linearity following R package
 \code{rcdd}.  What is the dimension of the linearity?
-<<linearity.bigcategorical>>=
-sum(eta >= (- sqrt(.Machine$double.eps)))
-sum(eta < (- sqrt(.Machine$double.eps)))
+
+First we get some idea of sizes of components of $\eta$.
+<<eta.size.bigcategorical>>=
+eta.sorted <- sort(eta)
+eta.sorted.diff <- diff(eta.sorted)
+i <- which(eta.sorted.diff == max(eta.sorted.diff))
+eta.sorted[seq(i - 2, i + 2)]
 @
-This does not agree with the supplementary material for
-\citet{eck-geyer}.  Looks like we have a DOR but not a GDOR.  
-Thus we must iterate the process.
+So it looks like only very large negative values of components of $\eta$,
+nearly equal to $-1$ are to be considered nonzero.
+And these indicate components of the response vector constrained to be
+zero in the LCM.
+<<is.zero.lcm.bigcategorical>>=
+is.zero.lcm <- eta < -1e-3
+sum(is.zero.lcm)
+sum(!is.zero.lcm)
+sum(is.zero & (! is.zero.lcm))
+@
+
+This disagrees with the analysis in the supplementary material of
+the paper where these data come from \citep{eck-geyer}.
+They say 82 components of the response vector are constrained to be
+zero in the LCM.  We only have, in our analysis so far,
+\Sexpr{sum(is.zero.lcm)}.
+So we iterate.
 
 \section{Practice: Second Iteration}
 
-\subsection{Save GDOR}
+\subsection{Save DOR}
 
-<<lcm.big.cat.save.gdor>>=
+Save the DOR already found
+<<save.gdor>>=
 save.delta <- delta
 @
 
-\subsection{Fit GLM for LCM}
+\subsection{Modify Linear Program}
 
-Limiting conditional model (LCM) conditions on the event
-$\langle y, \eta \rangle = 0$, that is, on $\eta_j < 0$ implies $Y_j = 0$.
-To fit this model, we subset the data
-<<lcm.big.cat.subset>>=
-is.zero.lcm <- eta < (- sqrt(.Machine$double.eps))
-bigcategorical.sub <- subset(bigcategorical,
-    subset = ! is.zero.lcm)
-dim(bigcategorical.sub)
-@
-
-Fit LCM
-<<big.data.fit.lcm,error=TRUE,cache=TRUE>>=
-gout <- bigglm(y ~ 0 + (x1 + x2 + x3 + x4 + x5)^4,
-    family = poisson(), data = bigcategorical.sub,
-    maxit = 200)
-@
-Well, that's a shock.  Unlike R function \code{glm}, R function \code{bigglm}
-cannot handle collinearity.  We will just have to do without it.
-
-\subsection{Zero Data Values}
-
-<<big.data.mean.value.is.zero.lcm>>=
-is.zero <- bigcategorical.sub$y == 0
-@
-
-\subsection{Model Matrix}
-
-<<sparse.model.matrix.bigcategorical.lcm>>=
-m <- sparse.model.matrix(
-    y ~ 0 + (x1 + x2 + x3 + x4 + x5)^4,
-    data = bigcategorical.sub)
-dim(m)
-@
-
-\subsection{Linear Program Specification}
-
-<<linprog.lcm>>=
-# objective function gradient
-objgrd <- rbind(as.numeric(is.zero)) %*% m
+<<iter.two.modify.objfun>>=
+is.zero.unknown <- is.zero & (! is.zero.lcm)
+objgrd <- rbind(as.numeric(is.zero.unknown)) %*% m
 objgrd <- as(objgrd, "numeric")
-# destruct LP object
-delProbCLP(lp)
-# initialize LP object
-lp <- initProbCLP()
-# set row number
-resizeCLP(lp, nrow(m), 0)
-# shut up printout to standard error.
-setLogLevelCLP(lp, 0)
-# add columns
-foo <- rep(Inf, ncol(m))
-addColsCLP(lp, ncol(m), -foo, foo, objgrd, m@p, m@i, m@x)
-# set the row bounds
-chgRowLowerCLP(lp, -as.numeric(is.zero))
-chgRowUpperCLP(lp, rep(0, nrow(m)))
-# set optimization direction to minimize
-setObjDirCLP(lp, 1)
-# solve LP
+chgObjCoefsCLP(lp, objgrd)
+@
+
+\subsection{Solve LP}
+
+<<iter.two.solve>>=
 lptime <- system.time(primalCLP(lp))
 getSolStatusCLP(lp) == 0
 lptime
 delta <- getColPrimCLP(lp)
 @
 
+\subsection{Optimal Value}
+
+<<iter.two.optimal.value>>=
+getObjValCLP(lp)
+@
+This says that we have found a DOR that is not a DOC.
+So MLE do not exist in the conventional sense in the LCM we have
+found so far (which constrains \Sexpr{sum(is.zero.lcm)} components
+of the response vector to be equal to zero) and we have
+to find an LCM with smaller support (that constrains even more
+components of the response vector to be equal to zero).
+
 \subsection{Check Solution}
 
-<<eta.bigcategorical.lcm>>=
+Check that we have solution.  First map DOR to saturated model
+canonical parameter scale.
+<<iter.two.eta>>=
 eta <- m %*% delta
 eta <- as(eta, "numeric")
-# check all components of eta nonnegative
-max(eta)
-# check that y[j] > 0 implies eta[j] == 0
-range(eta[bigcategorical.sub$y > 0])
 @
+
+Now check
+<<iter.two.eta.check>>=
+# all components of eta nonnegative
+max(eta)
+# y[j] > 0 implies eta[j] == 0
+range(eta[bigcategorical$y > 0])
+@
+Looks OK.
 
 \subsection{Linearity}
 
-Now we have a problem matching up the LCM with the original model.
-<<lcm.and.om>>=
-idx <- as.numeric(rownames(bigcategorical.sub))
-length(idx)
-length(eta)
-eta.om <- double(nrow(bigcategorical))
-eta.om[idx] <- eta
-sum(is.zero.lcm)
-length(eta.om)
-length(is.zero.lcm)
-is.zero.lcm <- is.zero.lcm | eta.om < (- sqrt(.Machine$double.eps))
-sum(is.zero.lcm)
-
-##### ?????
-range(bigcategorical$y[is.zero.lcm])
+First we get some idea of sizes of components of $\eta$.
+<<iter.two.eta.size>>=
+eta.sorted <- sort(eta)
+eta.sorted.diff <- diff(eta.sorted)
+i <- which(eta.sorted.diff == max(eta.sorted.diff))
+eta.sorted[seq(i - 2, i + 2)]
 @
+Now there is an even clearer gap between apparently zero and apparently nonzero.
+
+So it looks like only very large negative values of components of $\eta$,
+nearly equal to $-1$ are to be considered nonzero.
+And these indicate components of the response vector constrained to be
+zero in the LCM.
+<<iter.two.is.zero.lcm>>=
+is.zero.lcm <- is.zero.lcm | eta < -1e-3
+sum(is.zero.lcm)
+sum(!is.zero.lcm)
+sum(is.zero & (! is.zero.lcm))
+@
+
+This disagrees with the analysis in the supplementary material of
+the paper where these data come from \citep{eck-geyer}.
+They say 82 components of the response vector are constrained to be
+zero in the LCM.  We only have, in our analysis so far,
+\Sexpr{sum(is.zero.lcm)}.
+So we iterate again.
+
+\section{Practice: Third Iteration}
+
+\subsection{Save DOR}
+
+Save the DOR already found
+<<iter.three.save.gdor>>=
+save.delta <- cbind(save.delta, delta)
+@
+
+\pagebreak[3]
+\subsection{Modify Linear Program}
+
+<<iter.three.modify.objfun>>=
+is.zero.unknown <- is.zero & (! is.zero.lcm)
+objgrd <- rbind(as.numeric(is.zero.unknown)) %*% m
+objgrd <- as(objgrd, "numeric")
+chgObjCoefsCLP(lp, objgrd)
+@
+
+\subsection{Solve LP}
+
+<<iter.three.solve>>=
+lptime <- system.time(primalCLP(lp))
+getSolStatusCLP(lp) == 0
+lptime
+delta <- getColPrimCLP(lp)
+@
+
+\subsection{Optimal Value}
+
+<<iter.three.optimal.value>>=
+getObjValCLP(lp)
+@
+This says that we have found a DOR that is not a DOC.
+So MLE do not exist in the conventional sense in the LCM we have
+found so far (which constrains \Sexpr{sum(is.zero.lcm)} components
+of the response vector to be equal to zero) and we have
+to find an LCM with smaller support (that constrains even more
+components of the response vector to be equal to zero).
+
+\subsection{Check Solution}
+
+Check that we have solution.  First map DOR to saturated model
+canonical parameter scale.
+<<iter.three.eta>>=
+eta <- m %*% delta
+eta <- as(eta, "numeric")
+@
+
+Now check
+<<iter.three.eta.check>>=
+# all components of eta nonnegative
+max(eta)
+# y[j] > 0 implies eta[j] == 0
+range(eta[bigcategorical$y > 0])
+@
+Looks OK.
+
+\subsection{Linearity}
+
+First we get some idea of sizes of components of $\eta$.
+<<iter.three.eta.size>>=
+eta.sorted <- sort(eta)
+eta.sorted.diff <- diff(eta.sorted)
+i <- which(eta.sorted.diff == max(eta.sorted.diff))
+eta.sorted[seq(i - 2, i + 2)]
+@
+Now there is an even clearer gap between apparently zero and apparently nonzero.
+
+So it looks like only very large negative values of components of $\eta$,
+nearly equal to $-1$ are to be considered nonzero.
+And these indicate components of the response vector constrained to be
+zero in the LCM.
+<<iter.three.is.zero.lcm>>=
+is.zero.lcm <- is.zero.lcm | eta < -1e-3
+sum(is.zero.lcm)
+sum(!is.zero.lcm)
+sum(is.zero & (! is.zero.lcm))
+@
+
+This now agrees with the analysis in the supplementary material of
+the paper where these data come from \citep{eck-geyer}.
+They say 82 components of the response vector are constrained to be
+zero in the LCM.  We now also have \Sexpr{sum(is.zero.lcm)}.
+
+But we still need to do one more iteration to prove that we have
+an LCM with the smallest possible support.
+
+\section{Practice: Fourth Iteration}
+
+\subsection{Save DOR}
+
+Save the DOR already found
+<<iter.four.save.gdor>>=
+save.delta <- cbind(save.delta, delta)
+@
+
+\subsection{Modify Linear Program}
+
+<<iter.four.modify.objfun>>=
+is.zero.unknown <- is.zero & (! is.zero.lcm)
+objgrd <- rbind(as.numeric(is.zero.unknown)) %*% m
+objgrd <- as(objgrd, "numeric")
+chgObjCoefsCLP(lp, objgrd)
+@
+
+\subsection{Solve LP}
+
+<<iter.four.solve>>=
+lptime <- system.time(primalCLP(lp))
+getSolStatusCLP(lp) == 0
+lptime
+delta <- getColPrimCLP(lp)
+@
+
+\subsection{Optimal Value}
+
+<<iter.four.optimal.value>>=
+getObjValCLP(lp)
+@
+This says that every DOR of the LCM (that we have found so far,
+which constrains \Sexpr{sum(is.zero.lcm)} components
+of the response vector to be equal to zero) is also a DOC.
+So MLE do exist in the conventional sense in this LCM
+And this terminates our iteration.
+We have solved what \citet{thesis} calls the
+``Phase~I'' maximum likelihood problem.
+
+\section{Which Components are Zero in LCM?}
+
+<<check.zeros>>=
+which(is.zero.lcm)
+@
+These seem to agree with the analysis in \citet{eck-geyer}.
+
+\section{Generic Direction of Recession}
+
+If we want a \emph{generic} DOR (GDOR) \citep{gdor},
+then we have one: any positive combination of the DOR already found.
+<<gdor>>=
+gdor <- rowSums(save.delta)
+@
+
+Let us check that this works.
+<<gdor.check>>=
+gdor.eta <- m %*% gdor
+gdor.eta <- as(gdor.eta, "numeric")
+# all components of eta nonnegative
+max(gdor.eta)
+# y[j] > 0 implies eta[j] == 0
+range(gdor.eta[bigcategorical$y > 0])
+# gaps in size
+max(gdor.eta[gdor.eta < -1e-3])
+min(gdor.eta[gdor.eta > -1e-3])
+@
+
+And check the linearity it determines is same as we already had.
+<<gdor.linearity>>=
+identical(is.zero.lcm, gdor.eta < -1e-3)
+@
+
 
 \begin{thebibliography}{}
 
