@@ -41,7 +41,7 @@ efglm(formula, data, family = c("poisson", "binomial", "multinomial"), ...)
     typically the environment from which this function is called.}
 
   \item{...}{additional arguments passed to R function \code{\link[stats]{glm}}
-    which is used to fit the limiting conditional model.
+    which is used to fit the limiting conditional model.}
 }
 \details{
   In an exponential family generalized linear model (GLM) the maximum
@@ -105,6 +105,7 @@ efglm(formula, data, family = c("poisson", "binomial", "multinomial"), ...)
 # data(sports)
 # out <- glmdr(cbind(wins, losses) ~ 0 + ., family = "binomial", data = sports)
 # summary(out)
+2 + 2
 }
 \keyword{models}
 \keyword{regression}

@@ -11,3 +11,4 @@ gdor.R
 sparse.R
 cache
 bigcategorical.txt
+*.bak

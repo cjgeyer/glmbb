@@ -1,11 +1,11 @@
 Package: glmbb
-Version: 0.4
-Date: 2020-08-07
+Version: 0.5
+Date: 2020-11-01
 Title: All Hierarchical or Graphical Models for Generalized Linear Model
 Author: Charles J. Geyer <charlie@stat.umn.edu>.
 Maintainer: Charles J. Geyer <charlie@stat.umn.edu>
 Depends: R (>= 3.1.1)
-Imports: digest, stats
+Imports: digest, stats, Matrix
 ByteCompile: TRUE
 Description: Find all hierarchical models of specified generalized linear
     model with information criterion (AIC, BIC, or AICc) within specified

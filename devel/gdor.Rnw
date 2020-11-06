@@ -629,7 +629,8 @@ fred <- function(modmat, response, tolerance = 1e-3) {
 @
 Try it.
 <<try>>=
-fout <- fred(m, bigcategorical$y)
+time.fred <- system.time(fout <- fred(m, bigcategorical$y))
+time.fred
 fout$is.lcm
 identical(is.zero.lcm, fout$is.zero.lcm)
 all.equal(gdor, fout$gdor)

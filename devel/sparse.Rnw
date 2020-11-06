@@ -158,7 +158,7 @@ program.
 \section{Items for the Linear Program}
 
 Now we need to figure out a few things about the data and the fitted model.
-<<mu-hat>>=
+<<mu.hat>>=
 mu.hat <- gout$fitted
 min(mu.hat)
 max(mu.hat[mu.hat < 1000 * min(mu.hat)])
@@ -167,7 +167,7 @@ min(mu.hat[mu.hat > 1000 * min(mu.hat)])
 For these data it is clear what the zeros are (we think).  There are
 roughly eight orders of magnitude between the apparent zeros and the
 apparent nonzeros.
-<<mu-hat-is-zero>>=
+<<mu.hat.is.zero>>=
 is.zero <- mu.hat < 1000 * min(mu.hat)
 sum(is.zero)
 sum(gout$y[is.zero])
@@ -183,58 +183,58 @@ objgrd <- as(objgrd, "numeric")
 
 We would like to be able to do really large scale problems with no worries.
 R package \code{clpAPI} purports to do this.  Let's try it out.
-<<clpAPI-library>>=
+<<clpAPI.library>>=
 library("clpAPI")
 @
 
 The first thing is to make a model object.
-<<clpAPI-initialize>>=
+<<clpAPI.initialize>>=
 lp <- initProbCLP()
 @
 
 Apparently, we need the following.
-<<clpAPI-resize>>=
+<<clpAPI.resize>>=
 resizeCLP(lp, nrow(m), 0)
 @
 
 And also this, to shut up printout to standard error.
-<<clpAPI-blather>>=
+<<clpAPI.blather>>=
 setLogLevelCLP(lp, 0)
 @
 
 Now we put a bunch of stuff into the linear program, mainly the constraint
 matrix, but also bounds on the variables (there are none but we have to say
 that).
-<<clpAPI-add-columns>>=
+<<clpAPI.add.columns>>=
 foo <- rep(Inf, ncol(m))
 addColsCLP(lp, ncol(m), -foo, foo, objgrd, m@p, m@i, m@x)
 @
 
 Now we have to set the row bounds
-<<clpAPI-row-bounds>>=
+<<clpAPI.row.bounds>>=
 chgRowLowerCLP(lp, -as.numeric(is.zero))
 chgRowUpperCLP(lp, rep(0, nrow(m)))
 @
 
 And the optimization "direction" to minimize.
-<<clpAPI-minimize>>=
+<<clpAPI.minimize>>=
 setObjDirCLP(lp, 1)
 @
 
 \section{Solve}
 
 And we think we are ready to solve the linear programming problem.
-<<clpAPI-solve>>=
+<<clpAPI.solve>>=
 primalCLP(lp)
 getSolStatusCLP(lp)
 @
 Solution status = 0 means optimal.
-<<clpAPI-delta>>=
+<<clpAPI.delta>>=
 delta <- getColPrimCLP(lp)
 @
 The solution is a generalized direction of recession (GDOR).
 
-<<print-dor>>=
+<<print.dor>>=
 names(delta) <- names(gout$coefficients)
 cbind(delta)[zapsmall(delta) != 0, , drop = FALSE]
 @
@@ -243,14 +243,14 @@ Completely agrees with Table~{1} in \citet{gdor}.
 \section{Destruct}
 
 And the last thing we do is destruct the model object.
-<<clpAPI-dispose>>=
+<<clpAPI.dispose>>=
 delProbCLP(lp)
 @
 
 \appendix
 
 We do a bigger example
-<<read-big-data>>=
+<<read.big.data>>=
 foo <- "https://conservancy.umn.edu/bitstream/handle/11299/197369/bigcategorical.txt"
 bar <- sub("^.*/", "", foo)
 if (! file.exists(bar))
@@ -262,7 +262,7 @@ names(bigcategorical)
 @
 Fit model specified in the paper
 (all 4 way and no 5 way interactions).
-<<big-data-fit,error=TRUE,cache=TRUE>>=
+<<big.data.fit,error=TRUE,cache=TRUE>>=
 library(biglm)
 gout <- bigglm(y ~ 0 + (x1 + x2 + x3 + x4 + x5)^4,
     family = poisson(), data = bigcategorical, maxit = 200)
@@ -272,7 +272,7 @@ length(cout)
 @
 
 Now get mean-value parameters
-<<big-data-mean-value,error=TRUE,cache=TRUE>>=
+<<big.data.mean.value,error=TRUE,cache=TRUE>>=
 mu <- predict(gout, newdata = bigcategorical, type = "response")
 length(mu)
 foo <- log10(sort(mu))
@@ -303,33 +303,33 @@ objgrd <- rbind(as.numeric(is.zero)) %*% m
 objgrd <- as(objgrd, "numeric")
 @
 Initialize CLP object
-<<clpAPI-initialize-bigcategorical>>=
+<<clpAPI.initialize.bigcategorical>>=
 lp <- initProbCLP()
 @
 Set row number
-<<clpAPI-resize.bigcategorical>>=
+<<clpAPI.resize.bigcategorical>>=
 resizeCLP(lp, nrow(m), 0)
 @
 And also this, to shut up printout to standard error.
-<<clpAPI-blather.bigcategorical>>=
+<<clpAPI.blather.bigcategorical>>=
 setLogLevelCLP(lp, 0)
 @
 Add columns
-<<clpAPI-add-columns.bigcategorical>>=
+<<clpAPI.add.columns.bigcategorical>>=
 foo <- rep(Inf, ncol(m))
 addColsCLP(lp, ncol(m), -foo, foo, objgrd, m@p, m@i, m@x)
 @
 Set the row bounds
-<<clpAPI-row-bounds.bigcategorical>>=
+<<clpAPI.row.bounds.bigcategorical>>=
 chgRowLowerCLP(lp, -as.numeric(is.zero))
 chgRowUpperCLP(lp, rep(0, nrow(m)))
 @
 Set optimization "direction" to minimize.
-<<clpAPI-minimize.bigcategorical>>=
+<<clpAPI.minimize.bigcategorical>>=
 setObjDirCLP(lp, 1)
 @
 Solve
-<<clpAPI-solve.bigcategorical>>=
+<<clpAPI.solve.bigcategorical>>=
 lptime <- system.time(primalCLP(lp))
 getSolStatusCLP(lp)
 @
@@ -339,7 +339,7 @@ lptime
 @
 
 The solution is a generalized direction of recession (GDOR)
-<<clpAPI-delta.bigcategorical>>=
+<<clpAPI.delta.bigcategorical>>=
 delta <- getColPrimCLP(lp)
 @
 
@@ -387,17 +387,17 @@ chgRowLowerCLP(lp, -as.numeric(is.zero))
 @
 
 And re-solve
-<<clpAPI-solve.bigcategorical.too,cache=TRUE>>=
+<<clpAPI.solve.bigcategorical.too,cache=TRUE>>=
 lptime <- system.time(primalCLP(lp))
 getSolStatusCLP(lp)
 @
 Show time
-<<clpAPI-solve.bigcategorical.too.time>>=
+<<clpAPI.solve.bigcategorical.too.time>>=
 lptime
 @
 
 Get GDOR
-<<clpAPI-delta.bigcategorical.too>>=
+<<clpAPI.delta.bigcategorical.too>>=
 delta.save <- delta
 delta <- getColPrimCLP(lp)
 max(abs(delta - delta.save))
