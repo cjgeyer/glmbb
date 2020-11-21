@@ -12,3 +12,5 @@ sparse.R
 cache
 bigcategorical.txt
 *.bak
+*.rda
+*.txt

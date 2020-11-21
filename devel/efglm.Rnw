@@ -1,0 +1,731 @@
+
+\documentclass[11pt]{article}
+
+\usepackage{algorithm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{indentfirst}
+\usepackage{natbib}
+\usepackage{url}
+
+\let\code=\texttt
+
+\newcommand{\opand}{\mathbin{\rm and}}
+\newcommand{\opor}{\mathbin{\rm or}}
+\newcommand{\relimplies}{\mathrel{\rm implies}}
+
+\newcommand{\set}[1]{\{\,#1\,\}}
+
+\newcommand{\dorset}{N_{C_\text{sub}}(M^T y)}
+
+\let\emptyset=\varnothing
+
+\newtheorem{theorem}{Theorem}
+
+\newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
+\newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
+
+\begin{document}
+
+\title{Design of an R function to do Limiting Conditional Models
+for Exponential Family Generalized Linear Models and Log-Linear Models
+for Contingency Tables including Multinomial Response Models}
+
+\author{Charles J. Geyer}
+
+\maketitle
+
+<<options,include=FALSE,echo=FALSE>>=
+options(keep.source = TRUE, width = 60)
+@
+
+\section{Introduction}
+
+This is the design document for an R function to fit generalized linear
+models (GLM) that are discrete exponential families and log-linear models
+(LLM) for contingency tables (all of which are exponential families) and
+do the right thing when the maximum likelihood estimate (MLE)
+is ``at infinity'' \citep{geyer-gdor}.
+
+We also wish to fit so-called multinomial response models, also called
+baseline-category logit models \citep[Section~8.1]{agresti} or
+multinomial log-linear models (R function \code{multinom} in
+R recommended package \code{nnet}).
+These are a special case of LLM, as the last synonym suggests.
+
+Because we only handle exponential family GLM and LLM there is no
+choice of link function allowed.  Only the canonical link function
+that make the model an exponential family are used.  Thus the
+family can only be specified by a character string,
+\code{"poisson"}, \code{"binomial"}, or \code{"multinomial"}.
+
+\begin{itemize}
+\item When the family is \code{"poisson"} or \code{"binomial"} we
+    fit the models fit by R function \code{glm} when these families
+    are specified as such (so the default link function is used).
+\item When the family is \code{"multinomial"} we
+    fit the models fit by
+\begin{itemize}
+\item R function \code{loglin} or
+\item R function \code{multinom} in recommended
+    package \code{nnet} (which is part of every installation of R
+    by default).
+\end{itemize}
+These functions only fit LLM.  There are no optional link functions.
+\end{itemize}
+
+When no MLE exists in the original model (OM), this is detected
+and an MLE in the the Barndorff-Nielsen completion is determined.
+The object returned is a list having class \code{"efglm" "glm" "lm"}
+that is the value of R function \code{glm} for the limiting conditional
+model (LCM) with two components added
+\begin{itemize}
+\item A logical vector \code{linearity} of the same length as the response
+    vector that indicates which components of the response vector are
+    random in the LCM, the rest of the components are conditioned to be
+    equal to their observed values (which is equivalent to dropping these
+    components from the response vector).  In the family is
+    \code{"multinomial"} and the response is a matrix, then \code{linearity}
+    is also a matrix of the same dimensions.
+
+    In case the LCM is the OM, \code{linearity} has all components \code{TRUE}.
+\item a numeric vector \code{gdor} of the same length as the coefficients
+    vector of the OM that is a generic direction of recession (GDOR)
+    of the log likelihood of the OM.
+
+    In case the LCM is the OM, \code{gdor} has all components zero.
+\end{itemize}
+
+\section{Determining Whether an MLE Exists}
+
+\subsection{Directions of Recession}
+
+From Section~3.9 of \citet{geyer-gdor} we see that if $y$ is the response vector
+and $M$ is the model matrix, then $M^T y$ is the submodel canonical sufficient
+statistic vector.  Theorems 1, 3, and {4} in \citet{geyer-gdor} say that
+an MLE exists for the submodel canonical parameter
+vector (called the coefficients vector by R function \code{glm})
+if and only if every direction of recession of the log likelihood is also
+a direction of constancy, where, if $Y$ denotes a random realization of the
+response vector and $y$ the observed value of the response vector, a vector
+$\delta$ in the submodel canonical parameter space is
+\begin{itemize}
+\item a \emph{direction of recession} (DOR) if and only if
+    $(Y - y)^T M \delta \le 0$ almost surely and
+\item a \emph{direction of constancy} (DOC) if and only if
+    $(Y - y)^T M \delta = 0$ almost surely.
+\end{itemize}
+
+The set of all DOR is denoted $\dorset$.
+For this notation see \citet{geyer-gdor}, Section 3.2, Theorem~3,
+and Sections 3.9 and 3.10.
+A DOR $\delta$ is generic (is a GDOR) if $\dorset$ is not a vector subspace
+and $\delta$ is in the relative interior of $\dorset$
+\citep[Section~3.6]{geyer-gdor}.
+
+An MLE does not exist in the OM if and only if
+$N_C(M^T y)$ is not a vector subspace \citep[Theorem~4]{geyer-gdor}.
+The relative interior of a nonempty convex set is always nonempty
+\citep[Section~3.6]{geyer-gdor}.
+Hence an MLE does not exist in the OM if and only if a GDOR exists.
+ 
+\subsection{Poisson Sampling}
+
+\begin{theorem} \label{th:poisson-dor}
+If $y$ is the observed value of the response vector and $M$ is the
+model matrix for a Poisson model and $\eta = M \delta$,
+then $\delta$ is a DOR if and only if both of the following conditions hold,
+$$
+   \eta_i \le 0, \qquad \text{for all $i$},
+$$
+and
+$$
+   \eta_i < 0 \relimplies y_i = 0, \qquad \text{for all $i$}.
+$$
+\end{theorem}
+\begin{proof}
+From the preceding section, $\delta$ is a DOR if and only if
+$(Y - y)^T \eta \le 0$ almost surely.
+
+If both conditions of the theorem statement hold, then
+$(Y - y)^T \eta \le 0$ almost surely,
+because $Y_i$ is nonnegative-integer-valued.
+
+Conversely, suppose one or the other of the conditions of the theorem statement
+fails to hold.  If $\eta_i > 0$ for some $i$, then there is positive
+probability that $Y_i > y_i$ and $Y_j = y_j$ for $j \neq i$.
+But when that event occurs we have $(Y - y)^T \eta = (Y_i - y_i) \eta_i > 0$,
+and $\delta$ cannot be a direction of recession.
+If $\eta_i < 0$ and $y_i > 0$ for some $i$, then there is positive
+probability that $Y_i < y_i$ and $Y_j = y_j$ for $j \neq i$.
+But when that event occurs we have $(Y - y)^T \eta = (Y_i - y_i) \eta_i > 0$,
+and $\delta$ cannot be a direction of recession.
+\end{proof}
+
+\begin{theorem} \label{th:poisson-gdor}
+In the same situation as in Theorem~\ref{th:poisson-dor},
+let $I$ be the index set of the response vector,
+and let $I^{**}$ be the set of $i \in I$ for which there exists
+a DOR $\delta$ such that $\eta = M \delta$ and $\eta_i < 0$.
+Then a DOR $\delta$ is a GDOR if and only if $I^{**}$ is nonempty,
+$\eta = M \delta$,
+and $\eta_i < 0$ for all $i \in I^{**}$.
+\end{theorem}
+A GDOR fails to exist and an MLE exists in the OM
+if and only if $I^{**}$ is empty.
+\begin{proof}
+With the definition of $I^{**}$ in the theorem statement, $\dorset$ is the
+set of all $\delta$ such that $\eta = M \delta$ and
+\begin{subequations}
+\begin{alignat}{2}
+   \eta_i & \le 0, & \qquad & i \in I^{**}
+   \label{eq:poisson-gdor-foompter}
+   \\
+   \eta_i & = 0, &  & i \in I \setminus I^{**}
+\end{alignat}
+\end{subequations}
+Being the solution set of a finite set of linear equalities and inequalities,
+$\dorset$ is a polyhedral convex cone \citep[Section~3.5]{geyer-gdor}.
+It follows that the relative interior of $\dorset$ is the
+set of all $\delta$ such that $\eta = M \delta$ and
+\begin{alignat*}{2}
+   \eta_i & < 0, & \qquad & i \in I^{**}
+   \\
+   \eta_i & = 0, &  & i \in I \setminus I^{**}
+\end{alignat*}
+This follows from Proposition~{2.42} in \citet{rockafellar-wets}
+plus the fact that for a half space the relative
+interior is the same as the interior
+plus the fact that none of the inequalities \eqref{eq:poisson-gdor-foompter}
+imply an equality (by definition of $I^{**}$).
+\end{proof}
+
+We can search for DOR with linear programming.  Consider the
+following linear programming problem.  Let $I$ be the index set
+of the response vector and the saturated model canonical parameter vector,
+let $J$ be the index set of the submodel parameter vector,
+and let $m_{i j}$ denote the components of the model matrix.
+Then let $I^* = \set{i \in I : y_i = 0}$, where $y$ is
+the observed value of the response vector.
+\begin{alignat}{2}
+  \text{minimize}   & \ \sum_{i \in I^*} \sum_{j \in J} m_{i j} \delta_j
+  \nonumber
+  \\
+  \text{subject to} & \ \sum_{j \in J} m_{i j} \delta_j = 0,
+      & \qquad & i \in I \setminus I^*
+  \label{prog:no-mu-hat}
+  \\
+                    & \ -1 \le \sum_{j \in J} m_{i j} \delta_j \le 0,
+      & & i \in I^*
+  \nonumber
+\end{alignat}
+
+\begin{theorem}
+An MLE exists in the OM
+if and only if the linear program \eqref{prog:no-mu-hat} has optimal value
+zero.  When the optimal value is negative, it must be less than or equal to
+$-1$, the solution $\delta$ is a DOR that is not a direction of constancy,
+and taking
+limits in that direction gives a limiting conditional model having smaller
+support than the original model.
+\end{theorem}
+See Theorem~6 and the following discussion in \citet{geyer-gdor} for discussion
+of limits in directions of recession and the resulting limiting conditional
+models.
+\begin{proof}
+It is clear from Theorem~\ref{th:poisson-dor}
+that the feasible region (the set of $\delta$ satisfying the
+constraints) of the linear program \eqref{prog:no-mu-hat} contains some
+positive scalar multiple of every DOR (the reason why it does not include
+every DOR is to be a bounded region so the linear program has a solution).
+Hence the solution is a DOR.  If the optimal value is zero, then the
+solution set is the null space of the model matrix, and an MLE does not
+exist in the OM.
+
+If the optimal value is negative, then we can rescale the solution $\delta$
+so that its most negative component of $\eta = M \delta$ is equal to $-1$,
+hence the optimal value must be less than or equal to $-1$.
+
+The support of the LCM taking limits in the direction $\delta$ that is
+the solution of the linear program is
+$$
+   \set{ y : \eta_i < 0 \relimplies y_i = 0 }
+$$
+where $\eta = M \delta$.  When the optimal value is negative,
+this is clearly smaller than the support of the OM.
+\end{proof}
+
+Although this linear program is guaranteed to find a DOR that is not a DOC
+if one exists, it is not guaranteed to find a GDOR.  To do that, we need
+to solve multiple linear programs.
+
+\begin{theorem}
+Change $I^*$ as defined just before the linear program \eqref{prog:no-mu-hat}
+to be any nonempty subset of $I$ such that $y_i = 0$, $i \in I^*$,
+that is $I^*$ is any nonempty subset of what it is
+for Theorem~\ref{th:poisson-dor}.
+
+Now a DOR $\delta$ exists such that $\eta = M \delta$ satisfies
+$\eta_i < 0$ for some $i \in I^*$ if and only if
+the linear program \eqref{prog:no-mu-hat} has negative optimal value,
+in which case that optimal value must be less than or equal to
+$-1$ and the solution is such a DOR.
+\end{theorem}
+\begin{proof}
+Now the feasible region of the linear program \eqref{prog:no-mu-hat}
+contains some positive scalar multiple of every DOR $\delta$ such
+that $\eta = M \beta$ and $\eta_i < 0$ for some $i \in I^*$.
+Hence the solution is a such a DOR unless the optimal value is zero.
+
+If the optimal value is negative, then we can rescale the solution $\delta$
+so that its most negative component of $\eta = M \delta$ is equal to $-1$,
+hence the optimal value must be less than or equal to $-1$.
+\end{proof}
+
+\begin{algorithm}
+\caption{Find GDOR, Poisson Sampling}
+\label{alg:poisson}
+\begin{tabbing}
+Set $I^* = \set{i \in I : y_i = 0}$\\
+Set $I^{**} = \emptyset$\\
+Set $\gamma = 0$\\
+\textbf{repeat} \{\\
+\qquad \= Solve the linear program \eqref{prog:no-mu-hat}\\
+\> \textbf{if} (linear program has no solution) \textbf{error}\\
+\> \textbf{if} (optimal value is zero) \textbf{break}\\
+\> Set $\delta$ to be the solution of the linear program\\
+\> Set $\gamma = \gamma + \delta$\\
+\> Set $\eta = M \delta$\\
+\> Set $I^{**} = I^{**} \cup \set{i \in I : \eta_i < 0}$\\
+\> Set $I^* = I^* \setminus I^{**}$\\
+\> \textbf{if} ($I^* = \emptyset$) \textbf{break}\\
+\}
+\end{tabbing}
+\end{algorithm}
+\begin{theorem}
+Algorithm~\ref{alg:poisson} constructs the set $I^{**}$
+of Theorem~\ref{th:poisson-gdor}, and, if that set is nonempty,
+constructs a GDOR $\gamma$.
+\end{theorem}
+\begin{proof}
+If the result is that $I^{**}$ is empty, then
+from Theorem~\ref{th:poisson-dor} the MLE exists in the OM.
+Otherwise, the algorithm continues searching for components of $I^*$
+that should be in $I^{**}$ until all are found.  Since a positive linear
+combination of DOR is another DOR, the result $\gamma$ is a DOR
+that satisfies the conditions of Theorem~\ref{th:poisson-gdor} to be
+a GDOR.
+\end{proof}
+
+\subsection{Binomial Sampling}
+
+The situation becomes only slightly more complicated for binomial
+sampling.  Now we not only have the response vector $y$ but also
+a sample size vector $n$ with $0 \le y_i \le n_i$ for all $i$.
+
+The following theorems are similar to those in the preceeding section.
+Since the proofs are also similar, we omit them.
+
+\begin{theorem} \label{th:binomial-dor}
+If $y$ is the observed value of the response vector and $M$ is the
+model matrix for a binomial model and $\eta = M \delta$,
+then $\delta$ is a DOR if and only if both of the following conditions hold,
+$$
+   \eta_i > 0 \relimplies y_i = n_i, \qquad \text{for all $i$}.
+$$
+and
+$$
+   \eta_i < 0 \relimplies y_i = 0, \qquad \text{for all $i$}.
+$$
+\end{theorem}
+
+\begin{theorem} \label{th:binomial-gdor}
+In the same situation as in Theorem~\ref{th:binomial-dor},
+let $I$ be the index set of the response vector,
+and let $I^{**}$ be the set of $i \in I$ for which there exists
+a DOR $\delta$ such that $\eta = M \delta$ and $\eta_i \neq 0$.
+Then a DOR $\delta$ is a GDOR if and only if $I^{**}$ is nonempty,
+$\eta = M \delta$,
+and $\eta_i \neq 0$ for all $i \in I^{**}$.
+\end{theorem}
+
+Then let $I^* = \set{i \in I : y_i = 0 \opor y_i = n_i}$, where $y$ is
+the observed value of the response vector.
+\begin{alignat}{2}
+  \text{minimize}   & \ 
+      \sum_{\substack{i \in I^* \\ y_i = 0}} \sum_{j \in J} m_{i j} \delta_j
+      -
+      \sum_{\substack{i \in I^* \\ y_i = n_i}} \sum_{j \in J} m_{i j} \delta_j
+  \nonumber
+  \\
+  \text{subject to} & \ \sum_{j \in J} m_{i j} \delta_j = 0,
+      & \qquad & i \in I \setminus I^*
+  \label{prog:binomial}
+  \\
+                    & \ -1 \le \sum_{j \in J} m_{i j} \delta_j \le 0,
+      & & i \in I^* \opand y_i = 0
+  \nonumber
+  \\
+                    & \ 0 \le \sum_{j \in J} m_{i j} \delta_j \le 1,
+      & & i \in I^* \opand y_i = n_i
+  \nonumber
+\end{alignat}
+
+\begin{theorem}
+An MLE exists in the OM
+if and only if the linear program \eqref{prog:binomial} has optimal value
+zero.  When the optimal value is negative, it must be less than or equal to
+$-1$, the solution $\delta$ is a DOR that is not a direction of constancy,
+and taking
+limits in that direction gives a limiting conditional model having smaller
+support than the original model.
+\end{theorem}
+
+\begin{theorem}
+Change $I^*$ as defined just before the linear program \eqref{prog:binomial}
+to be any nonempty subset of $I$ such that $y_i = 0 \opor y_i = n_i$,
+$i \in I^*$,
+that is $I^*$ is any nonempty subset of what it is
+for Theorem~\ref{th:binomial-dor}.
+
+Now a DOR $\delta$ exists such that $\eta = M \delta$ satisfies
+$\eta_i \neq 0$ for some $i \in I^*$ if and only if
+the linear program \eqref{prog:no-mu-hat} has negative optimal value,
+in which case that optimal value must be less than or equal to
+$-1$ and the solution is such a DOR.
+\end{theorem}
+
+\begin{algorithm}
+\caption{Find GDOR, Binomial Sampling}
+\label{alg:binomial}
+\begin{tabbing}
+Set $I^* = \set{i \in I : y_i = 0 \opor y_i = n_i}$\\
+Set $I^{**} = \emptyset$\\
+Set $\gamma = 0$\\
+\textbf{repeat} \{\\
+\qquad \= Solve the linear program \eqref{prog:no-mu-hat}\\
+\> \textbf{if} (linear program has no solution) \textbf{error}\\
+\> \textbf{if} (optimal value is zero) \textbf{break}\\
+\> Set $\delta$ to be the solution of the linear program\\
+\> Set $\gamma = \gamma + \delta$\\
+\> Set $\eta = M \delta$\\
+\> Set $I^{**} = I^{**} \cup \set{i \in I : \eta_i \neq 0}$\\
+\> Set $I^* = I^* \setminus I^{**}$\\
+\> \textbf{if} ($I^* = \emptyset$) \textbf{break}\\
+\}
+\end{tabbing}
+\end{algorithm}
+\begin{theorem}
+Algorithm~\ref{alg:binomial} constructs the set $I^{**}$
+of Theorem~\ref{th:binomial-gdor}, and, if that set is nonempty,
+constructs a GDOR $\gamma$.
+\end{theorem}
+
+\subsection{Multinomial Sampling}
+
+\begin{thebibliography}{}
+
+\bibitem[Agresti(2013)]{agresti}
+Agresti, A. (2013).
+\newblock \emph{Categorical Data Analysis}, third edition.
+\newblock John Wiley \& Sons, Hoboken.
+
+\bibitem[Geyer(2009)]{geyer-gdor}
+Geyer, C.~J. (2009).
+\newblock Likelihood inference in exponential families and directions of
+    recession.
+\newblock \emph{Electronic Journal of Statistics}, \textbf{3}, 259--289
+    (electronic).
+
+\bibitem[Geyer(2016a)]{expfam}
+Geyer, C.~J. (2016a).
+\newblock Stat 5421 Lecture Notes: Exponential Families, Part I.
+\newblock \url{http://www.stat.umn.edu/geyer/5421/notes/expfam.pdf}.
+
+\bibitem[Geyer(2016b)]{infinity}
+Geyer, C.~J. (2016b).
+\newblock Stat 5421 Lecture Notes: Exponential Families, Part II.
+\newblock \url{http://www.stat.umn.edu/geyer/5421/notes/infinity.pdf}.
+
+\bibitem[Rockafellar and Wets(1998)]{rockafellar-wets}
+Rockafellar, R.~T., and Wets, R.~J.-B. (1998).
+\newblock \emph{Variational Analysis}.
+\newblock Springer-Verlag, Berlin.
+\newblock (The corrected printings contain extensive changes.  We used
+    the third corrected printing, 2010.)
+
+\end{thebibliography}
+
+\end{document}
+
+\REVISED
+
+Thus this algorithm may need to be iterated.
+We can change the objective function (only) of the linear program
+to seek other DOR that make other components of $\mu$ equal to zero that
+we have not yet found.
+
+
+\REVISED
+ 
+
+
+\begin{itemize}
+\item
+When the family is specified to be \code{"poisson"} (unlike R function
+\code{glm} only a character string value of this argument is allowed)
+our function should work just like R function \code{glm} with argument
+\code{family = "poisson"} (so the link function is automatically the
+default log link) except that when the maximum likelihood estimate does
+not exist in the conventional sense (the solution is ``at infinity'')
+our function finds a generalized direction of recession (GDOR),
+finds the corresponding linearity, and
+fits the corresponding limiting conditional model (LCM) \citep{geyer-gdor}.
+It returns an object of including all of this.
+\item
+When the family is specified to be \code{"binomial"} (unlike R function
+\code{glm} only a character string value of this argument is allowed)
+our function should work just like R function \code{glm} with argument
+\code{family = "binomial"} (so the link function is automatically the
+default logit link) except that when the maximum likelihood estimate does
+not exist in the conventional sense (the solution is ``at infinity'')
+our function finds a (GDOR), finds the corresponding linearity, and
+fits the corresponding LCM \citep{geyer-gdor}.
+It returns an object of including all of this.
+
+Like R function \code{glm} our function should handle both Bernoulli response
+(the response vector is zero-or-one-valued) or general binomial response
+(the response ``vector'' is actually a two-column matrix of counts, the
+first column the count of successes for each case and the
+second column the count of failures for each case).
+\item
+When the family is specified to be \code{"multinomial"} our function should
+fit the models described in Section~8.1 of \citet{agresti}.
+
+Like R function \code{multinom} in R package \code{nnet}, which is a so-called
+recommended package that is installed by default in every installation of R,
+our function should handle both factor response (the response vector is an
+R object of class \code{"factor"}) or general multinomial response
+(the response ``vector'' is actually a matrix of counts, each column the count
+for one category of the categorical response).
+
+When the maximum likelihood estimate does
+not exist in the conventional sense (the solution is ``at infinity'')
+the LCM is not necessarily of the same form.  The LCM conditions on
+certain components of the response ``vector'' being equal to their observed
+values, and, when the original model was specified as a matrix, this
+can result in a ``ragged'' matrix, which is not something R allows
+(although it could be faked with a list).  Thus we need the following
+item.
+
+\item
+
+\end{itemize}
+
+\section{Alligators}
+\label{sec:alligators}
+
+For an example of multinomial regression we will use the alligator food
+choice from \citet[Table~8.1]{agresti}
+<<alligator-data>>=
+library("CatDataAnalysis")
+data("table_8.1")
+names(table_8.1)
+@
+In these data the response vector is \code{count} and the categories of
+response are \code{food}, which is categorical
+<<alligator-data-response-categories>>=
+sapply(table_8.1, class)
+sapply(table_8.1, max)
+@
+We guess these integer values are in the order they occur in the table
+published in the book.
+<<alligator-data-fixup>>=
+table_8.1 <- transform(table_8.1,
+    lake = c("Hancock", "Oklawaha", "Trafford", "George")[lake])
+table_8.1 <- transform(table_8.1,
+    gender = c("Male", "Female")[gender])
+table_8.1 <- transform(table_8.1,
+    size = c("less_than_2.3", "greater_than_2.3")[size])
+table_8.1 <- transform(table_8.1,
+    food = c("Fish", "Invertebrate", "Reptile", "Bird", "Other")[food])
+sapply(table_8.1, class)
+@
+
+We check that we have some data values shown in the table correct
+<<alligator-data-fixup-check>>=
+subset(table_8.1, lake == "Hancock" & gender == "Male"
+    & size == "less_than_2.3")
+subset(table_8.1, lake == "George" & gender == "Female"
+    & size == "greater_than_2.3")
+@
+Seems like we are OK in that we have gotten the first and last lines of the
+table in the book correct.  We could, of course, check some other lines
+if we thought we needed to.
+
+We know (\citealp[Section~2.1.5]{agresti}; \citealp[Section~7]{expfam})
+that we can fit the model assuming
+Poisson sampling, multinomial sampling or product-multinomial sampling and
+convert the results from one sampling scheme to the other.
+
+Officially, our model is product-multinomial.  Every sum over the food
+category (for each possible values of the other variables) is fixed rather
+than random.  Another way of saying this is that the
+\code{lake:gender:size} margin is fixed.
+
+This means we must have \code{lake:gender:size} in the formula for every
+model we fit if we use Poisson sampling.  And if we are thinking the formula
+has some expression \code{foo} on the right-hand side, we need to have
+\code{food:foo} in our formula if we use Poisson sampling.
+For example, the models fit in Table~8.2 of \citet{agresti} are
+<<fit-models>>=
+f <- c(null = "", g = "gender", s = "size", l = "lake",
+    ls = "lake + size", lsg = "lake + size + gender")
+ff <- sapply(f, function(x) {
+    if(grepl("+", x, fixed = TRUE)) x <- paste0("(", x, ")")
+    if(x != "") x <- paste0(":", x)
+    paste0("count ~ lake:gender:size + food", x)
+})
+cbind(ff)
+mm <- lapply(ff, function(x) glm(as.formula(x),
+    family = "poisson", data = table_8.1))
+Gsq <- sapply(mm, function(x) x$deviance)
+Xsq <- sapply(mm, function(x) {
+    o <- x$y
+    e <- x$fitted.values
+    sum((o - e)^2 / e)
+})
+df <- sapply(mm, function(x) x$df.residual)
+foo <- data.frame(Gsq, Xsq, df)
+@
+
+\pagebreak[3]
+The following should match part of Table~{8.2} in \citet{agresti}.
+And it does.
+<<fit-models-output>>=
+print(foo, digits = 3)
+@
+
+Now we ignore all but the \code{lake + size} model
+<<model-ls-observed>>=
+xtabs(count ~ size + food + lake, data = table_8.1)
+@
+OK.  But we want to reorder the factor levels so it agrees with the book.
+<<model-ls-observed>>=
+table_8.1 <- transform(table_8.1, lake = factor(lake,
+    levels = c("Hancock", "Oklawaha", "Trafford", "George")))
+table_8.1 <- transform(table_8.1, size = factor(size,
+    levels = c("less_than_2.3", "greater_than_2.3")))
+table_8.1 <- transform(table_8.1, food = factor(food,
+    levels = c("Fish", "Invertebrate", "Reptile", "Bird", "Other")))
+xtabs(count ~ size + food + lake, data = table_8.1)
+@
+That agrees with the counts (numbers not in parentheses) in Table~{8.3}
+in \citet{agresti}.  Now we try for estimated expected counts (numbers
+in parentheses).
+<<model-ls-expected>>=
+m <- mm$ls
+e <- m$fitted.values
+print(xtabs(e ~ size + food + lake, data = table_8.1),
+    digits = 1)
+@
+OK.  So what is wanted is a more convenient way to fit models like this.
+
+\section{Alligators Redo}
+
+We try using R function \code{multinom} in R package \code{nnet},
+which is a ``recommended'' package installed by default in all installations
+of R.
+
+For this we need to reshape the data.
+<<alligators-reshape>>=
+resp <- unstack(table_8.1, count ~ food)
+pred <- subset(table_8.1, food == "Fish")
+dim(resp)
+dim(pred)
+colnames(resp)
+colnames(pred)
+resp <- as.matrix(resp)
+
+library(nnet)
+mout <- multinom(resp ~ lake + size + gender, data = pred)
+summary(mout)
+@
+
+\section{Design for Product Multinomial}
+
+\subsection{Matrix Response}
+
+So one design is just like that of R function \code{multinom}.
+The response is a matrix.  The formula is ``crossed'' with the variable
+that is the column labels of this matrix, and the joint distribution of the
+data is Poisson conditioned on the row sums of this matrix.
+
+\subsection{Factor Response}
+
+This is also implemented by R function \code{multinom}.
+The response is a factor.  The formula is ``crossed'' with this factor,
+and the joint distribution of the data is Poisson conditioned on number
+of cases having each level of this factor being fixed.
+
+\subsection{Vector Response, Explicit Crossing and Conditioning}
+
+Alternatively, we can have a design that works like the analysis of
+Section~\ref{sec:alligators} above.  Now the response vector is just the
+vector of counts in all cells of the contingency table, the same as it was
+in Section~\ref{sec:alligators} above.
+
+Now the conditioning is explicit.  It could be specified by either a factor
+or a formula that yields a model matrix that has zero-or-one-valued components
+and row sums equal to one.  For example, for the analysis of
+Section~\ref{sec:alligators} above, we could use the formula
+\begin{verbatim}
+conditioning = ~ 0 + lake:gender:size
+\end{verbatim}
+The ``\code{0 +}'' is important.  Without it, we would not have a model
+matrix (for this formula) with row sums equal to one.
+
+And the ``crossing'' is also explicit.  For example, for the analysis of
+Section~\ref{sec:alligators} above, we could use the formula
+\begin{verbatim}
+crossing = food
+\end{verbatim}
+
+This design is so tricky, we leave it out of the initial implementation.
+
+\section{Solutions at Infinity}
+
+\subsection{Theory}
+
+From Section~3.9 of \citet{geyer-gdor} we see that if $y$ is the response vector
+and $M$ is the model matrix, then $M^T y$ is the submodel canonical sufficient
+statistic vector.  Theorems 1, 3, and {4} in \citet{geyer-gdor} say that the
+maximum likelihood estimate (MLE) exists for the submodel canonical parameter
+vector (called the coefficients vector by R function \code{glm})
+if and only if every direction of recession of the log likelihood is also
+a direction of constancy, where if $Y$ denotes a random realization of the
+response vector and $y$ the observed value of the response vector, a vector
+$\delta$ in the submodel canonical parameter space is
+\begin{itemize}
+\item a \emph{direction of recession} if $(Y - y)^T M \delta \le 0$
+    almost surely and
+\item and a \emph{direction of constancy} if $(Y - y)^T M \delta = 0$
+    almost surely.
+\end{itemize}
+
+Suppose $\delta$ is a direction of recession
+and define $\eta = M \delta$.  Then by definition of direction of recession,
+we have $Y^T \eta \le y^T \eta$ almost surely.
+\begin{itemize}
+\item If $\eta_j = 0$, this says nothing about $Y_j$.
+\item If $\eta_j < 0$, this says $Y_j \ge y_j$ almost surely because it
+    is possible that all coordinates of $Y$ are zero except for $Y_j$.
+    And this implies $y_j = 0$ because it it possible for $Y_j$ to be zero.
+\item If $\eta_j > 0$, this says $Y_j \le y_j$ almost surely, and this is
+    impossible because $Y_j$ can take arbitrarily large values.  Thus this
+    case in not allowed.
+\end{itemize}
+Thus for any direction of recession $\eta$ we must have all coordinates
+nonpositive, and we must have $\eta_j < 0$ implies $y_j = 0$.
+

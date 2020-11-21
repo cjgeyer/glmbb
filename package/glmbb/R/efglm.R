@@ -44,7 +44,9 @@ efglm <- function(formula, data,
         # and failures, respectively
         stopifnot(is.vector(response) || is.factor(response) ||
             is.matrix(response))
-        if (is.vector(response))
+        if (is.vector(response)) {
+            # in progress, still work to do
+        }
     }
 
 
