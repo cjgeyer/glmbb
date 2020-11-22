@@ -1,0 +1,87 @@
+
+R version 4.0.3 (2020-10-10) -- "Bunny-Wunnies Freak Out"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+>  packageVersion("glmbb")
+[1] ‘0.4’
+> 
+>  options(width = 132)
+> 
+>  library(CatDataAnalysis)
+>  data(exercise_8.28)
+>  sapply(exercise_8.28, class)
+Satisfaction      Contact    Influence      Housing       counts 
+    "factor"     "factor"     "factor"     "factor"    "numeric" 
+> 
+>  library(glmbb)
+>  out <- glmbb(counts ~ Contact * Influence * Housing * Satisfaction,
++     little = ~ Contact * Influence * Housing + Satisfaction,
++     data = exercise_8.28)
+>  summary(out)
+
+Results of search for hierarchical models with lowest AIC.
+Search was for all models with AIC no larger than min(AIC) + 10
+These are shown below.
+
+  criterion  weight    formula                                                                                                  
+  455.6      0.470971  counts ~ Contact*Satisfaction + Influence*Satisfaction + Housing*Satisfaction + Contact*Influence*Housing
+  457.1      0.228679  counts ~ Contact*Satisfaction + Contact*Influence*Housing + Influence*Housing*Satisfaction               
+  457.2      0.212294  counts ~ Influence*Satisfaction + Contact*Influence*Housing + Contact*Housing*Satisfaction               
+  459.8      0.058657  counts ~ Contact*Influence*Housing + Contact*Housing*Satisfaction + Influence*Housing*Satisfaction       
+  462.4      0.015640  counts ~ Housing*Satisfaction + Contact*Influence*Housing + Contact*Influence*Satisfaction               
+  464.0      0.007277  counts ~ Contact*Influence*Housing + Contact*Influence*Satisfaction + Contact*Housing*Satisfaction       
+  464.2      0.006481  counts ~ Contact*Influence*Housing + Contact*Influence*Satisfaction + Influence*Housing*Satisfaction     
+
+>  
+>  # above is correct AFAIK
+>  # now for the bug
+> 
+>  bug.out <- glmbb(counts ~ Satisfaction * Contact * Influence * Housing,
++     little = ~ Satisfaction + Contact * Influence * Housing,
++     data = exercise_8.28)
+>  summary(bug.out)
+
+Results of search for hierarchical models with lowest AIC.
+Search was for all models with AIC no larger than min(AIC) + 10
+These are shown below.
+
+  criterion  weight    formula                                                                                                  
+  455.6      0.235486  counts ~ Satisfaction*Contact + Satisfaction*Influence + Satisfaction*Housing + Contact*Influence*Housing
+  455.6      0.235486  counts ~ Satisfaction*Contact + Satisfaction*Influence + Satisfaction*Housing + Contact*Influence*Housing
+  457.1      0.114340  counts ~ Satisfaction*Contact + Contact*Influence*Housing + Satisfaction*Influence*Housing               
+  457.1      0.114340  counts ~ Satisfaction*Contact + Satisfaction*Influence*Housing + Contact*Influence*Housing               
+  457.2      0.106147  counts ~ Satisfaction*Influence + Satisfaction*Contact*Housing + Contact*Influence*Housing               
+  457.2      0.106147  counts ~ Satisfaction*Influence + Contact*Influence*Housing + Satisfaction*Contact*Housing               
+  459.8      0.029329  counts ~ Satisfaction*Contact*Housing + Satisfaction*Influence*Housing + Contact*Influence*Housing       
+  459.8      0.029329  counts ~ Contact*Influence*Housing + Satisfaction*Contact*Housing + Satisfaction*Influence*Housing       
+  462.4      0.007820  counts ~ Satisfaction*Housing + Satisfaction*Contact*Influence + Contact*Influence*Housing               
+  462.4      0.007820  counts ~ Satisfaction*Housing + Contact*Influence*Housing + Satisfaction*Contact*Influence               
+  464.0      0.003638  counts ~ Contact*Influence*Housing + Satisfaction*Contact*Influence + Satisfaction*Contact*Housing       
+  464.0      0.003638  counts ~ Satisfaction*Contact*Influence + Satisfaction*Contact*Housing + Contact*Influence*Housing       
+  464.2      0.003240  counts ~ Contact*Influence*Housing + Satisfaction*Contact*Influence + Satisfaction*Influence*Housing     
+  464.2      0.003240  counts ~ Satisfaction*Contact*Influence + Satisfaction*Influence*Housing + Contact*Influence*Housing     
+
+> 
+>  # Just by rearranging the formulas, every model is listed twice,
+>  # which makes the weights half what they should be
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  0.525   0.042   0.551 

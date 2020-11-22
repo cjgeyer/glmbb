@@ -1,0 +1,6 @@
+
+ 0.4   Fixed BIC by adding argument BIC.option to R function glmbb
+       Added note to documentation of R function glmbb explaining
+           bogosity of previous definition of BIC and of AICc
+
+ 0.5   Fixed bug that made glmbb output some models twice

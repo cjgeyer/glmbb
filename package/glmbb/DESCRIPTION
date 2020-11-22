@@ -1,6 +1,6 @@
 Package: glmbb
-Version: 0.5
-Date: 2020-11-01
+Version: 0.5-1
+Date: 2020-11-21
 Title: All Hierarchical or Graphical Models for Generalized Linear Model
 Author: Charles J. Geyer <charlie@stat.umn.edu>.
 Maintainer: Charles J. Geyer <charlie@stat.umn.edu>
