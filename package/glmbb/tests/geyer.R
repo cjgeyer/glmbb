@@ -36,3 +36,25 @@ d[zapsmall(eta) < 0, ]
 # above should agree with Table 2 in Geyer (2009)
 # and output in *.Rout.save does
 
+# Geyer, Likelihood inference in exponential families and directions
+#     of recession.  Electronic Journal of Statistics, 3, 259--289.
+# Section 2.4
+d <- read.table("sports.txt", header = TRUE)
+
+eout <- efglm(cbind(wins, losses) ~ 0 + ., data = d, family = "binomial")
+## IGNORE_RDIFF_BEGIN
+summary(eout)
+eout
+## IGNORE_RDIFF_END
+
+# check GDOR is correct
+# for once we look at delta rather than eta
+delta <- eout$gdor
+names(delta) <- colnames(model.matrix(eout$formula, data = d))
+delta
+# above should agree with Table 4 in Geyer (2009)
+# and output in *.Rout.save does in the sense that
+# delta and the vector tabulated in Geyer (2009) agree up to
+# addition of a constant to each term, which does not matter
+# because of the nature of Bradley-Terry models.
+

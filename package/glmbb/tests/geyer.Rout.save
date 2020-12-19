@@ -141,7 +141,57 @@ attr(,"class")
 > # above should agree with Table 2 in Geyer (2009)
 > # and output in *.Rout.save does
 > 
+> # Geyer, Likelihood inference in exponential families and directions
+> #     of recession.  Electronic Journal of Statistics, 3, 259--289.
+> # Section 2.4
+> d <- read.table("sports.txt", header = TRUE)
+> 
+> eout <- efglm(cbind(wins, losses) ~ 0 + ., data = d, family = "binomial")
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+             Length Class   Mode     
+formula       3     formula call     
+family        1     -none-  character
+is.lcm        1     -none-  logical  
+is.fixed.lcm 28     -none-  logical  
+gdor          8     -none-  numeric  
+> eout
+$formula
+cbind(wins, losses) ~ 0 + .
+
+$family
+[1] "binomial"
+
+$is.lcm
+[1] TRUE
+
+$is.fixed.lcm
+ [1]  TRUE  TRUE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE
+[13] FALSE FALSE FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+[25]  TRUE  TRUE  TRUE FALSE
+
+$gdor
+[1]  1  0  0  0  0  0 -1 -1
+
+attr(,"class")
+[1] "efglm"
+> ## IGNORE_RDIFF_END
+> 
+> # check GDOR is correct
+> # for once we look at delta rather than eta
+> delta <- eout$gdor
+> names(delta) <- colnames(model.matrix(eout$formula, data = d))
+> delta
+   ants beetles    cows    dogs  egrets   foxes gerbils    hogs 
+      1       0       0       0       0       0      -1      -1 
+> # above should agree with Table 4 in Geyer (2009)
+> # and output in *.Rout.save does in the sense that
+> # delta and the vector tabulated in Geyer (2009) agree up to
+> # addition of a constant to each term, which does not matter
+> # because of the nature of Bradley-Terry models.
+> 
+> 
 > 
 > proc.time()
    user  system elapsed 
-  1.410   0.625   1.055 
+  1.481   0.633   1.064 
