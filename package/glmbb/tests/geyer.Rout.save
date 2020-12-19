@@ -1,0 +1,147 @@
+
+R version 4.0.3 (2020-10-10) -- "Bunny-Wunnies Freak Out"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(glmbb)
+> 
+> # Geyer, Likelihood inference in exponential families and directions
+> #     of recession.  Electronic Journal of Statistics, 3, 259--289.
+> # Section 2.2
+> 
+> x <- 1:30
+> y <- ifelse(x <= 12 | x >= 24, 0, 1)
+> 
+> eout <- efglm(y ~ x + I(x^2), family = "binomial")
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+             Length Class   Mode     
+formula       3     formula call     
+family        1     -none-  character
+is.lcm        1     -none-  logical  
+is.fixed.lcm 30     -none-  logical  
+gdor          3     -none-  numeric  
+> eout
+$formula
+y ~ x + I(x^2)
+
+$family
+[1] "binomial"
+
+$is.lcm
+[1] TRUE
+
+$is.fixed.lcm
+ [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+[16] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+
+$gdor
+[1] -2.27093065  0.27868607 -0.00775542
+
+attr(,"class")
+[1] "efglm"
+> ## IGNORE_RDIFF_END
+> 
+> # check GDOR is correct
+> eta <- as.numeric(model.matrix(eout$formula) %*% eout$gdor)
+> identical(sign(eta), as.numeric(y == 1) - as.numeric(y == 0))
+[1] TRUE
+> 
+> # Geyer, Likelihood inference in exponential families and directions
+> #     of recession.  Electronic Journal of Statistics, 3, 259--289.
+> # Section 2.3
+> d <- read.table("catrec.txt", header = TRUE)
+> 
+> eout <- efglm(y ~ (.)^3, family = "poisson", data = d)
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+             Length Class   Mode     
+formula        3    formula call     
+family         1    -none-  character
+is.lcm         1    -none-  logical  
+is.fixed.lcm 128    -none-  logical  
+gdor          64    -none-  numeric  
+> eout
+$formula
+y ~ (.)^3
+
+$family
+[1] "poisson"
+
+$is.lcm
+[1] TRUE
+
+$is.fixed.lcm
+  [1]  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+ [13] FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+ [25] FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+ [37] FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ [49] FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+ [61] FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ [73]  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+ [85] FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+ [97]  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+[109] FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+[121] FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+
+$gdor
+ [1] -1.000000e+00  1.000000e+00  1.000000e+00  1.000000e+00 -6.538762e-13
+ [6]  1.000000e+00  2.188028e-13  4.918288e-13 -1.000000e+00 -1.000000e+00
+[11] -6.623591e-13 -1.000000e+00 -1.604938e-12 -4.502532e-13 -1.000000e+00
+[16]  4.849733e-13 -1.000000e+00  6.129763e-13 -5.558755e-14  1.188443e-12
+[21] -1.000000e+00 -2.188028e-13 -6.151694e-13 -2.537720e-13 -3.694822e-14
+[26]  9.577894e-13  7.202239e-13 -9.012791e-13 -1.900775e-14  1.000000e+00
+[31]  9.148238e-14  1.343370e-13  7.731593e-13  1.396685e-14  3.637091e-13
+[36]  1.000000e+00  3.839151e-13 -6.474821e-13 -5.409007e-13  5.708773e-13
+[41]  1.753207e-13  6.659118e-13  8.596584e-13  4.734371e-14 -8.131051e-13
+[46]  1.000000e+00 -4.053646e-13  3.863576e-13  4.226749e-13  2.058511e-13
+[51] -3.933298e-13  4.045037e-14  4.649927e-13 -4.172786e-13 -8.118617e-13
+[56] -4.975732e-13 -1.369060e-12 -1.146128e-12  4.929390e-13  1.506284e-12
+[61]  9.446416e-13  9.775736e-13 -3.508526e-13 -1.156097e-12
+
+attr(,"class")
+[1] "efglm"
+> ## IGNORE_RDIFF_END
+> 
+> # check GDOR is correct
+> eta <- as.numeric(model.matrix(eout$formula, data = d) %*% eout$gdor)
+> all(zapsmall(eta) <= 0)
+[1] TRUE
+> d[zapsmall(eta) < 0, ]
+    v1 v2 v3 v4 v5 v6 v7 y
+1    0  0  0  0  0  0  0 0
+9    0  0  0  1  0  0  0 0
+20   1  1  0  0  1  0  0 0
+28   1  1  0  1  1  0  0 0
+33   0  0  0  0  0  1  0 0
+41   0  0  0  1  0  1  0 0
+52   1  1  0  0  1  1  0 0
+60   1  1  0  1  1  1  0 0
+65   0  0  0  0  0  0  1 0
+73   0  0  0  1  0  0  1 0
+84   1  1  0  0  1  0  1 0
+92   1  1  0  1  1  0  1 0
+97   0  0  0  0  0  1  1 0
+105  0  0  0  1  0  1  1 0
+116  1  1  0  0  1  1  1 0
+124  1  1  0  1  1  1  1 0
+> # above should agree with Table 2 in Geyer (2009)
+> # and output in *.Rout.save does
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  1.410   0.625   1.055 

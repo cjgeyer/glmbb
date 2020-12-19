@@ -11,17 +11,22 @@
 
 \let\code=\texttt
 
+\newcommand{\real}{\mathbb{R}}
+
 \newcommand{\opand}{\mathbin{\rm and}}
 \newcommand{\opor}{\mathbin{\rm or}}
 \newcommand{\relimplies}{\mathrel{\rm implies}}
 
 \newcommand{\set}[1]{\{\,#1\,\}}
+\newcommand{\inner}[1]{\langle#1\rangle}
+\newcommand{\bigset}[1]{\left\{\,#1\,\right\}}
 
 \newcommand{\dorset}{N_{C_\text{sub}}(M^T y)}
 
 \let\emptyset=\varnothing
 
 \newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
 
 \newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
 \newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
@@ -56,7 +61,7 @@ These are a special case of LLM, as the last synonym suggests.
 
 Because we only handle exponential family GLM and LLM there is no
 choice of link function allowed.  Only the canonical link function
-that make the model an exponential family are used.  Thus the
+that make each model an exponential family is used.  Thus the
 family can only be specified by a character string,
 \code{"poisson"}, \code{"binomial"}, or \code{"multinomial"}.
 
@@ -67,7 +72,9 @@ family can only be specified by a character string,
 \item When the family is \code{"multinomial"} we
     fit the models fit by
 \begin{itemize}
-\item R function \code{loglin} or
+\item R function \code{loglin} in core R or R function \code{loglm}
+    in R package \code{MASS} (which is part of every installation of R
+    by default) or
 \item R function \code{multinom} in recommended
     package \code{nnet} (which is part of every installation of R
     by default).
@@ -77,17 +84,15 @@ These functions only fit LLM.  There are no optional link functions.
 
 When no MLE exists in the original model (OM), this is detected
 and an MLE in the the Barndorff-Nielsen completion is determined.
-The object returned is a list having class \code{"efglm" "glm" "lm"}
-that is the value of R function \code{glm} for the limiting conditional
-model (LCM) with two components added
+The object returned is a list having class \code{"efglm"}
+that contains an object returned by R \code{glm} for the limiting conditional
+model (LCM) and at least the following components.
 \begin{itemize}
 \item A logical vector \code{linearity} of the same length as the response
     vector that indicates which components of the response vector are
     random in the LCM, the rest of the components are conditioned to be
     equal to their observed values (which is equivalent to dropping these
-    components from the response vector).  In the family is
-    \code{"multinomial"} and the response is a matrix, then \code{linearity}
-    is also a matrix of the same dimensions.
+    components from the response vector).
 
     In case the LCM is the OM, \code{linearity} has all components \code{TRUE}.
 \item a numeric vector \code{gdor} of the same length as the coefficients
@@ -143,6 +148,7 @@ and
 $$
    \eta_i < 0 \relimplies y_i = 0, \qquad \text{for all $i$}.
 $$
+A direction $\delta$ is a DOC if and only if $M \delta = 0$.
 \end{theorem}
 \begin{proof}
 From the preceding section, $\delta$ is a DOR if and only if
@@ -161,6 +167,13 @@ If $\eta_i < 0$ and $y_i > 0$ for some $i$, then there is positive
 probability that $Y_i < y_i$ and $Y_j = y_j$ for $j \neq i$.
 But when that event occurs we have $(Y - y)^T \eta = (Y_i - y_i) \eta_i > 0$,
 and $\delta$ cannot be a direction of recession.
+
+For any coordinate $i$ it is possible that $Y_i \neq y_i$ and $Y_j = y_j$
+for $j \neq i$.  But when that event occurs we have
+$(Y - y)^T \eta = (Y_i - y_i) \eta_i \neq 0$,
+so, if $\eta = M \delta$, then $\delta$ cannot be a DOC.
+Conversely, if $\eta = M \delta = 0$, then $\inner{Y - y, \eta} = 0$
+and $\delta$ is a DOC.
 \end{proof}
 
 \begin{theorem} \label{th:poisson-gdor}
@@ -206,7 +219,7 @@ following linear programming problem.  Let $I$ be the index set
 of the response vector and the saturated model canonical parameter vector,
 let $J$ be the index set of the submodel parameter vector,
 and let $m_{i j}$ denote the components of the model matrix.
-Then let $I^* = \set{i \in I : y_i = 0}$, where $y$ is
+Let $I^* = \set{i \in I : y_i = 0}$, where $y$ is
 the observed value of the response vector.
 \begin{alignat}{2}
   \text{minimize}   & \ \sum_{i \in I^*} \sum_{j \in J} m_{i j} \delta_j
@@ -220,6 +233,9 @@ the observed value of the response vector.
       & & i \in I^*
   \nonumber
 \end{alignat}
+Here $\delta$ is the (vector) variable in the linear program,
+$\delta_j$ are its components, $J$ is its index set, and $m_{i j}$
+are the components of the model matrix $M$.
 
 \begin{theorem}
 An MLE exists in the OM
@@ -238,14 +254,18 @@ It is clear from Theorem~\ref{th:poisson-dor}
 that the feasible region (the set of $\delta$ satisfying the
 constraints) of the linear program \eqref{prog:no-mu-hat} contains some
 positive scalar multiple of every DOR (the reason why it does not include
-every DOR is to be a bounded region so the linear program has a solution).
-Hence the solution is a DOR.  If the optimal value is zero, then the
-solution set is the null space of the model matrix, and an MLE does not
-exist in the OM.
+every DOR is to be a bounded region so the linear program has a solution)
+and contains no vectors that are not DOR.
 
-If the optimal value is negative, then we can rescale the solution $\delta$
-so that its most negative component of $\eta = M \delta$ is equal to $-1$,
-hence the optimal value must be less than or equal to $-1$.
+Hence the solution is a DOR.  If the optimal value is zero, then the
+solution set is the null space of the model matrix, so the solution is a DOC,
+and an MLE does not exist in the OM.
+
+If a DOR $\delta$ exists that is not a DOC, then then we can rescale $\delta$
+so that its most negative component of $\eta = M \delta$ is equal to $-1$.
+For this $\delta$ the objective function is equal to $-1$.
+Hence the optimal value must be less than or equal to $-1$,
+and the solution must also be a DOR that is not a DOC.
 
 The support of the LCM taking limits in the direction $\delta$ that is
 the solution of the linear program is
@@ -259,24 +279,43 @@ this is clearly smaller than the support of the OM.
 Although this linear program is guaranteed to find a DOR that is not a DOC
 if one exists, it is not guaranteed to find a GDOR.  To do that, we need
 to solve multiple linear programs.
+Let $I^{{*}{*}{*}}$ be any nonempty subset of the $I^*$ defined just
+before the linear program \eqref{prog:no-mu-hat}, and consider the
+linear program.
+\begin{alignat}{2}
+  \text{minimize}   & \ \sum_{i \in I^{{*}{*}{*}}} \sum_{j \in J}
+      m_{i j} \delta_j
+  \nonumber
+  \\
+  \text{subject to} & \ \sum_{j \in J} m_{i j} \delta_j = 0,
+      & \qquad & i \in I \setminus I^*
+  \label{prog:no-mu-hat-iterator}
+  \\
+                    & \ -1 \le \sum_{j \in J} m_{i j} \delta_j \le 0,
+      & & i \in I^*
+  \nonumber
+\end{alignat}
+This differs from \eqref{prog:no-mu-hat} only in that we have
+$I^{{*}{*}{*}}$ in the first line here where we had $I^*$ in
+\eqref{prog:no-mu-hat}.  That is, the feasible regions for
+\eqref{prog:no-mu-hat} and \eqref{prog:no-mu-hat-iterator} are the same;
+only their objective functions differ.
 
 \begin{theorem}
-Change $I^*$ as defined just before the linear program \eqref{prog:no-mu-hat}
-to be any nonempty subset of $I$ such that $y_i = 0$, $i \in I^*$,
-that is $I^*$ is any nonempty subset of what it is
-for Theorem~\ref{th:poisson-dor}.
-
-Now a DOR $\delta$ exists such that $\eta = M \delta$ satisfies
-$\eta_i < 0$ for some $i \in I^*$ if and only if
-the linear program \eqref{prog:no-mu-hat} has negative optimal value,
+A DOR $\delta$ exists such that $\eta = M \delta$ satisfies
+$\eta_i < 0$ for some $i \in I^{{*}{*}{*}}$ if and only if
+the linear program \eqref{prog:no-mu-hat-iterator} has negative optimal value,
 in which case that optimal value must be less than or equal to
 $-1$ and the solution is such a DOR.
 \end{theorem}
 \begin{proof}
-Now the feasible region of the linear program \eqref{prog:no-mu-hat}
-contains some positive scalar multiple of every DOR $\delta$ such
-that $\eta = M \beta$ and $\eta_i < 0$ for some $i \in I^*$.
-Hence the solution is a such a DOR unless the optimal value is zero.
+The feasible region of the linear program \eqref{prog:no-mu-hat-iterator}
+is the same as the feasible region of \eqref{prog:no-mu-hat}.
+It contains only DOR and contains some positive scalar multiple of every DOR.
+Hence the solution is a DOR.
+
+If the optimal value is zero, then we have proved that no DOR $\delta$
+has $\eta = M \delta$ and $\eta_i < 0$ for some $i \in I^{{*}{*}{*}}$.
 
 If the optimal value is negative, then we can rescale the solution $\delta$
 so that its most negative component of $\eta = M \delta$ is equal to $-1$,
@@ -289,17 +328,18 @@ hence the optimal value must be less than or equal to $-1$.
 \begin{tabbing}
 Set $I^* = \set{i \in I : y_i = 0}$\\
 Set $I^{**} = \emptyset$\\
+Set $I^{{*}{*}{*}} = I^*$\\
 Set $\gamma = 0$\\
 \textbf{repeat} \{\\
-\qquad \= Solve the linear program \eqref{prog:no-mu-hat}\\
+\qquad \= Solve the linear program \eqref{prog:no-mu-hat-iterator}\\
 \> \textbf{if} (linear program has no solution) \textbf{error}\\
 \> \textbf{if} (optimal value is zero) \textbf{break}\\
 \> Set $\delta$ to be the solution of the linear program\\
 \> Set $\gamma = \gamma + \delta$\\
 \> Set $\eta = M \delta$\\
 \> Set $I^{**} = I^{**} \cup \set{i \in I : \eta_i < 0}$\\
-\> Set $I^* = I^* \setminus I^{**}$\\
-\> \textbf{if} ($I^* = \emptyset$) \textbf{break}\\
+\> Set $I^{{*}{*}{*}} = I^{{*}{*}{*}} \setminus I^{**}$\\
+\> \textbf{if} ($I^{{*}{*}{*}} = \emptyset$) \textbf{break}\\
 \}
 \end{tabbing}
 \end{algorithm}
@@ -324,12 +364,12 @@ The situation becomes only slightly more complicated for binomial
 sampling.  Now we not only have the response vector $y$ but also
 a sample size vector $n$ with $0 \le y_i \le n_i$ for all $i$.
 
-The following theorems are similar to those in the preceeding section.
+The following theorems are similar to those in the preceding section.
 Since the proofs are also similar, we omit them.
 
 \begin{theorem} \label{th:binomial-dor}
-If $y$ is the observed value of the response vector and $M$ is the
-model matrix for a binomial model and $\eta = M \delta$,
+For a binomial model, if $y$ is the observed value of the response vector,
+$n$ is the sample size vector, $M$ is the model matrix, and $\eta = M \delta$,
 then $\delta$ is a DOR if and only if both of the following conditions hold,
 $$
    \eta_i > 0 \relimplies y_i = n_i, \qquad \text{for all $i$}.
@@ -352,11 +392,14 @@ and $\eta_i \neq 0$ for all $i \in I^{**}$.
 
 Then let $I^* = \set{i \in I : y_i = 0 \opor y_i = n_i}$, where $y$ is
 the observed value of the response vector.
+Let $I^{{*}{*}{*}}$ be any nonempty subset of $I^*$.
 \begin{alignat}{2}
   \text{minimize}   & \ 
-      \sum_{\substack{i \in I^* \\ y_i = 0}} \sum_{j \in J} m_{i j} \delta_j
+      \sum_{\substack{i \in I^{{*}{*}{*}} \\ y_i = 0}} \sum_{j \in J}
+          m_{i j} \delta_j
       -
-      \sum_{\substack{i \in I^* \\ y_i = n_i}} \sum_{j \in J} m_{i j} \delta_j
+      \sum_{\substack{i \in I^{{*}{*}{*}} \\ y_i = n_i}} \sum_{j \in J}
+          m_{i j} \delta_j
   \nonumber
   \\
   \text{subject to} & \ \sum_{j \in J} m_{i j} \delta_j = 0,
@@ -373,7 +416,8 @@ the observed value of the response vector.
 \end{alignat}
 
 \begin{theorem}
-An MLE exists in the OM
+When $I^{{*}{*}{*}} = I^*$,
+an MLE exists in the OM
 if and only if the linear program \eqref{prog:binomial} has optimal value
 zero.  When the optimal value is negative, it must be less than or equal to
 $-1$, the solution $\delta$ is a DOR that is not a direction of constancy,
@@ -383,15 +427,9 @@ support than the original model.
 \end{theorem}
 
 \begin{theorem}
-Change $I^*$ as defined just before the linear program \eqref{prog:binomial}
-to be any nonempty subset of $I$ such that $y_i = 0 \opor y_i = n_i$,
-$i \in I^*$,
-that is $I^*$ is any nonempty subset of what it is
-for Theorem~\ref{th:binomial-dor}.
-
-Now a DOR $\delta$ exists such that $\eta = M \delta$ satisfies
-$\eta_i \neq 0$ for some $i \in I^*$ if and only if
-the linear program \eqref{prog:no-mu-hat} has negative optimal value,
+A DOR $\delta$ exists such that $\eta = M \delta$ satisfies
+$\eta_i \neq 0$ for some $i \in I^{{*}{*}{*}}$ if and only if
+the linear program \eqref{prog:binomial} has negative optimal value,
 in which case that optimal value must be less than or equal to
 $-1$ and the solution is such a DOR.
 \end{theorem}
@@ -402,17 +440,18 @@ $-1$ and the solution is such a DOR.
 \begin{tabbing}
 Set $I^* = \set{i \in I : y_i = 0 \opor y_i = n_i}$\\
 Set $I^{**} = \emptyset$\\
+Set $I^{{*}{*}{*}} = I^*$\\
 Set $\gamma = 0$\\
 \textbf{repeat} \{\\
-\qquad \= Solve the linear program \eqref{prog:no-mu-hat}\\
+\qquad \= Solve the linear program \eqref{prog:binomial}\\
 \> \textbf{if} (linear program has no solution) \textbf{error}\\
 \> \textbf{if} (optimal value is zero) \textbf{break}\\
 \> Set $\delta$ to be the solution of the linear program\\
 \> Set $\gamma = \gamma + \delta$\\
 \> Set $\eta = M \delta$\\
 \> Set $I^{**} = I^{**} \cup \set{i \in I : \eta_i \neq 0}$\\
-\> Set $I^* = I^* \setminus I^{**}$\\
-\> \textbf{if} ($I^* = \emptyset$) \textbf{break}\\
+\> Set $I^{{*}{*}{*}} = I^{{*}{*}{*}} \setminus I^{**}$\\
+\> \textbf{if} ($I^{{*}{*}{*}} = \emptyset$) \textbf{break}\\
 \}
 \end{tabbing}
 \end{algorithm}
@@ -422,7 +461,316 @@ of Theorem~\ref{th:binomial-gdor}, and, if that set is nonempty,
 constructs a GDOR $\gamma$.
 \end{theorem}
 
+\subsection{Three Lemmas About Conditional Probability}
+
+\begin{lemma}
+Repeated marginalization gives consistent results.
+If $X$, $Y$, and $Z$ are random vectors,
+then calculating the marginal of $X$ and $Y$ and then calculating the marginal
+of $X$ from that (in two steps) gives the same result as calculating the
+marginal of $X$ directly (in one step).
+\end{lemma}
+\begin{proof}
+If $X$, $Y$, and $Z$ are discrete having joint PMF $f$, then what
+must be shown is
+\begin{equation} \label{eq:marginal-of-marginal}
+   \sum_{(y, z) \in S(x)} f(x, y, z)
+   =
+   \sum_{y \in T(x)} \sum_{z \in S(x, y)} f(x, y, z)
+\end{equation}
+where $S$ is the domain of $f$ and
+\begin{align*}
+   S(x) & = \set{ (y, z) : (x, y, z) \in S }
+   \\
+   S(x, y) & = \set{ z : (x, y, z) \in S }
+   \\
+   T(x) & = \bigcup_{z \in S(x, y)} \set{ y : (x, y, z) \in S }
+\end{align*}
+and the sums on the two sides of \eqref{eq:marginal-of-marginal} are the
+same because the sets $\{y\} \times S(x, y)$ for $y \in T(x)$ partition $S(x)$.
+
+If any of these variables are continuous, some of the sums may be replaced
+by integrals, but otherwise the proof is the same.
+\end{proof}
+\begin{lemma}
+Marginalization and conditionalization can be interchanged.
+If $X$, $Y$, and $Z$ are random vectors,
+then calculating the marginal of $X$ and $Y$
+and then calculating the conditional of $X$ given $Y$ from that (in two steps)
+gives the same result as calculating the conditional of $X$ and $Z$ given $Y$
+and then calculating the marginal of that conditional that is the
+conditional of $X$ given $Y$ (the same two steps, but in reverse order).
+\end{lemma}
+\begin{proof}
+Using the notation of the preceding proof, what must be shown is
+$$
+   \frac{f_{X, Y}(x, y)}{f_Y(y)}
+   =
+   \sum_{z \in S(x, y)} \frac{f(x, y, z)}{f_Y(y)}
+$$
+where $f_Y$ is the marginal of $Y$ and $f_{X, Y}$ is the marginal of
+$X$ and $Y$.  But this is obvious because $f_Y(y)$ does not depend on $z$
+and hence can be moved outside the sum on the right-hand side.
+\end{proof}
+\begin{lemma} \label{lem:conditional-of-conditional}
+Repeated conditionalization gives consistent results.
+If $X$, $Y$, and $Z$ are random vectors,
+then calculating the conditional of $X$ and $Y$ given $Z$
+and then calculating the conditional of $X$ given $Y$ and $Z$
+from that (in two steps) gives the same result as calculating the
+conditional of $X$ given $Y$ and $Z$ directly (in one step).
+\end{lemma}
+\begin{proof}
+Using the notation of the preceding two proofs, what must be shown is
+$$
+    \frac{\frac{f(x, y, z)}{f_Z(z)}}{f_{Y \mid Z}(y \mid z)}
+    =
+    \frac{f(x, y, z)}{f_{Y, Z}(y, z)}
+$$
+but this is obvious because
+$$
+    f_{Y \mid Z}(y \mid z) = \frac{f_{Y, Z}(y, z)}{f_Z(z)}
+$$
+\end{proof}
+
 \subsection{Multinomial Sampling}
+
+According to the arguments in Section~3.17 of \citet{geyer-gdor}
+we can use our results for Poisson models to determine GDOR for
+multinomial and product multinomial models.
+
+Let $I$ be the index set of a Poisson GLM having response vector $Y$
+and let $\mathcal{A}$ be a partition of $I$.  For any $A \in A$, let
+\begin{equation} \label{eq:multinomial-sample-sizes}
+   n_A = \sum_{i \in A} y_i
+\end{equation}
+and let $n_\mathcal{A}$ denote the random vector having components $n_A$,
+$A \in \mathcal{A}$.  We say a partition $\mathcal{B}$ is \emph{finer}
+than a partition $\mathcal{A}$ if every $B \in \mathcal{B}$ is contained
+in some $A \in \mathcal{A}$.
+\begin{theorem}
+Consider a Poisson GLM having response vector $Y$ and mean value parameter
+vector $\mu$.  The conditional distribution of $Y$ given $n_\mathcal{A}$ is
+product multinomial with cell probabilities
+$$
+   p_i = \frac{\mu_i}{\sum_{j \in A} \mu_j}, \qquad i \in A \in \mathcal{A}.
+$$
+If such a model is conditioned on $n_\mathcal{B}$, where $\mathcal{B}$ is
+finer than $\mathcal{A}$, then the conditional distribution is again
+product multinomial with cell probabilities
+$$
+   p_i = \frac{\mu_i}{\sum_{j \in B} \mu_j}, \qquad i \in B \in \mathcal{B}.
+$$
+\end{theorem}
+When $\mathcal{A} = \{I\}$ is the trivial partition, we say the sampling
+model is ``mulltinomial'' rather than ``product multinomial''.
+\begin{proof}
+The probability mass function (PMF) of the Poisson model is
+$$
+   f_\mu(y) = \prod_{i \in I} \frac{\mu_i^{y_i}}{y_i !} e^{- \mu_i}
+$$
+Because sum of independent Poisson is Poisson,
+the marginal distribution of $n_\mathcal{A}$ is
+$$
+   f_\mu(n_\mathcal{A}) = \prod_{A \in \mathcal{A}}
+   \left(\sum_{i \in A} \mu_i\right)^{n_A}
+   \exp\left(- \sum_{i \in A} \mu_i\right)
+   \frac{1}{n_A !}
+$$
+Hence the conditional PMF of $y$ given $n_\mathcal{A}$ is
+$$
+   f_\mu(y \mid n_\mathcal{A})
+   =
+   \prod_{A \in \mathcal{A}}
+   \frac{n_A !}{\left(\sum_{i \in A} \mu_i\right)^{n_A}}
+   \prod_{i \in A}
+   \frac{\mu_i^{y_i}}{y_i !}
+   =
+   \prod_{A \in \mathcal{A}}
+   \binom{n_A}{y_A}
+   \prod_{i \in A}
+   \left( \frac{\mu_i}{\sum_{j \in A} \mu_j} \right)^{y_i}
+$$
+where we have introduced the notation $y_A$ for the ``subvector''
+having index set $A$ and components $y_i$ and the multinomial coefficient
+$$
+   \binom{n_A}{y_A} = n_A ! \prod_{i \in A} \frac{1}{y_i !}
+$$
+This conditional PMF is the product of multinomial PMF's.
+
+Lemma~\ref{lem:conditional-of-conditional} assures us that
+the conditional distribution of $y$ given $n_\mathcal{A}$ and $n_\mathcal{B}$
+is the same whether we do it in two steps or one step.
+And conditioning on $n_\mathcal{A}$ and $n_\mathcal{B}$ is the same as
+conditioning on $n_\mathcal{B}$ only, because $n_\mathcal{A}$ is a function
+of $n_\mathcal{B}$ (because $\mathcal{A}$ is a coarser partition
+than $\mathcal{B}$).
+\end{proof}
+
+\begin{theorem} \label{th:multinomial-dor}
+For a product multinomial model induced by a partition $\mathcal{A}$
+having observed value of the canonical statistic vector $y$
+and model matrix $M$, a vector $\delta$ is a DOR if and only if
+$\eta = M \delta$ and the following condition holds
+\begin{equation} \label{eq:multinomial-dor}
+   i \in A \in \mathcal{A}
+   \opand \eta_i < \max_{j \in A} \eta_j
+   \relimplies y_i = 0
+\end{equation}
+And a vector $\delta$ is a DOC if and only if
+\begin{equation} \label{eq:multinomial-doc}
+   i \in A \in \mathcal{A} \relimplies \eta_i = \max_{j \in A} \eta_j
+\end{equation}
+\end{theorem}
+\begin{proof}
+The vector $\delta$ is a DOR if and only if $\inner{Y - y, \eta} \le 0$
+almost surely.  Define
+$$
+   \zeta_A = \max_{i \in A} \eta_i, \qquad A \in \mathcal{A}.
+$$
+Then
+\begin{align*}
+   \inner{Y - y, \eta}
+   & =
+   \sum_{A \in \mathcal{A}} \sum_{i \in A} (Y_i - y_i) \eta_i
+   \\
+   & =
+   \sum_{A \in \mathcal{A}} \sum_{i \in A} (Y_i - y_i) (\eta_i - \zeta_A)
+\end{align*}
+because
+$$
+   \sum_{i \in A} Y_i = \sum_{i \in A} y_i = n_A, \qquad \text{almost surely}.
+$$
+If \eqref{eq:multinomial-dor} holds,
+since $\eta_i - \zeta_A \neq 0$ implies $\eta_i - \zeta_A < 0$ and
+$Y_i - y_i \ge 0$, we have $\inner{Y - y, \eta} \le 0$.
+
+Conversely, suppose \eqref{eq:multinomial-dor} fails to hold,
+that is, there exists an $i \in A \in \mathcal{A}$ such that $\eta_i < \zeta_A$
+but $y_i > 0$.  Then there is positive probability that $Y_i < y_i$
+and $Y_j = y_j$ for $j \neq i$.
+When that event occurs we have $\inner{Y - y, \eta} = (Y_i - y_i) \eta_i > 0$,
+and $\delta$ cannot be a DOR.
+
+A vector $\delta$ is a DOC if and only if $\inner{Y - y, \eta} = 0$
+almost surely.
+
+If \eqref{eq:multinomial-doc} holds then $i \in A$
+implies $\eta_i - \zeta_A = 0$, so $\inner{Y - y, \eta} = 0$.
+
+Conversely, if \eqref{eq:multinomial-doc} fails to hold, then there
+exist $i \in A \in \mathcal{A}$ such that $\eta_i < \zeta_A$.
+And there is positive probability that $Y_i \neq y_i$
+and $Y_j = y_j$ for $j \neq i$.  When that event occurs
+we have $\inner{Y - y, \eta} = (Y_i - y_i) \eta_i \neq 0$,
+and $\delta$ cannot be a DOC.
+\end{proof}
+\begin{theorem} \label{th:multinomial-gdor}
+For a product multinomial model induced by a partition $\mathcal{A}$
+having observed value of the canonical statistic vector $y$
+and model matrix $M$, a vector $\delta$ is a GDOR if and only if
+the following condition holds.
+
+Define the set $I^{**}$ as the set of $i \in I$ such that there exists
+a DOR $\delta$ such that $\eta = M \delta$ and
+$$
+   \eta_i < \max_{j \in A} \eta_j,
+   \qquad \text{for the $A \in \mathcal{A}$ such that $i \in A$}.
+$$
+Then a vector $\delta$ is a GDOR if and only if $I^{**}$ is nonempty
+and $\eta = M \delta$ and
+\begin{equation} \label{eq:multinomial-gdor}
+   i \in A \in \mathcal{A} \opand i \in I^{**}
+   \relimplies \eta_i < \max_{j \in A} \eta_j.
+\end{equation}
+\end{theorem}
+\begin{proof}
+From the Theorem~\ref{th:multinomial-dor} we know the set of all DOR,
+which is denoted $\dorset$,
+is the set of all $\delta$ such that $\eta = M \delta$ satisfies
+\eqref{eq:multinomial-dor}.
+Being a normal cone of a closed convex set, it is a convex cone
+\citep[Section~3.2]{geyer-gdor}, but for our own edification we give
+an elementary proof of this fact.  It is clear that \eqref{eq:multinomial-dor}
+is a closed cone, closed because it is a solution set of weak inequalities
+and a cone because the inequalities are homogeneous: if $\eta$ satisfies
+\eqref{eq:multinomial-dor} then so does $s \eta$ for any $s > 0$.
+Now consider two vectors $\eta$ and $\eta^*$ that satisfy
+\eqref{eq:multinomial-dor}, and suppose $\eta_j = \max_{i \in A} \eta_i$
+and $\eta^*_k = \max_{i \in A} \eta^*_i$.
+Then for $0 < s < 1$
+$$
+   s \eta_i + (1 - s) \eta^*_i \le s \eta_j + (1 - s) \eta^*_k
+   \le \max_{m \in A} ( s \eta_m + (1 - s) \eta^*_m )
+$$
+and that proves convexity.  Now we rewrite \eqref{eq:multinomial-dor} as
+\begin{subequations}
+\begin{equation} \label{eq:multinomial-gdor-a}
+   \bigcap_{A \in \mathcal{A}}
+   \bigcap_{i \in I^{**} \cap A}
+   \bigcup_{j \in A \setminus \{i\}}
+   \set{ \eta \in \real^I : \eta_i \le \eta_j }
+\end{equation}
+and \eqref{eq:multinomial-gdor} as
+\begin{equation} \label{eq:multinomial-gdor-b}
+   \bigcap_{A \in \mathcal{A}}
+   \bigcap_{i \in I^{**} \cap A}
+   \bigcup_{j \in A \setminus \{i\}}
+   \set{ \eta \in \real^I : \eta_i < \eta_j }
+\end{equation}
+\end{subequations}
+Clearly \eqref{eq:multinomial-gdor-a} is a closed set
+and \eqref{eq:multinomial-gdor-b} is an open set.
+If \eqref{eq:multinomial-gdor-b} is nonempty, then
+it is the interior of \eqref{eq:multinomial-gdor-a} by the
+relative interior criterion \citep[Exercise~2,1]{rockafellar-wets}.
+So it only remains to be shown that \eqref{eq:multinomial-gdor-b} is nonempty.
+We know for every $i \in I^{**}$ there exists a vector $\eta$ such that
+$$
+   \eta_i < \max_{j \in A} \eta_j
+$$
+where $A$ is the unique element of $\mathcal{A}$ containing $i$.
+Let $H$ be the set of all such $\eta$ (one for each element of $I^{**}$).
+Then $\sum_{\eta \in H} \eta$ is in \eqref{eq:multinomial-gdor-b}.
+\end{proof}
+
+\REVISED
+
+\begin{theorem}
+Consider a Poisson GLM having response vector $Y$, mean value parameter
+vector $\mu$, canonical parameter vector $\theta$ given
+by $\theta_i = \log(\mu_i)$, $i \in I$, and model matrix $M$,
+and let $\mathcal{A}$ be a partition of $I$.
+Suppose the indicator vectors $u_A$ having components $u_{A, i}$ given by
+$$
+   u_{A, i} = \begin{cases} 1, & i \in A \\ 0 & i \in I \setminus A \end{cases}
+$$
+are all in the column space of $M$.  Then the MLE mean value parameter
+vector of this Poisson GLM, if it exists,
+is equal to the MLE mean value parameter vector
+for the product multinomial model obtained by conditioning on $n_\mathcal{A}$.
+Moreover, the (unique) MLE canonical parameter vector for this Poisson GLM,
+if it exists, is also a (nonunique) MLE canonical parameter vector for
+this product multinomial model, when the same canonical parameterization
+is used for both models.
+
+When the MLE does not exist in Poisson GLM, any GDOR for this model
+is also a GDOR for the product multinomial model,
+when the same canonical parameterization is used for both models.
+\end{theorem}
+\begin{proof}
+The assertions about MLE follow from
+the ``observed equals expected'' property of maximum likelihood
+in a regular full exponential family.
+
+Define $I^{**}$ to be the set of all $i \in I$ such that $y_i = 0$
+and there exists a $\delta$ such that $\eta = M \delta$ and $\eta_i < 0$
+and $\eta_j \le 0$ for all $j \in I$.  Then by Theorems~\ref{th:poisson-dor}
+and~\ref{th:poisson-gdor} a vector $\delta$ is a GDOR for the Poisson GLM
+if and only if
+for $\eta = M \delta$ we have $\eta_i < 0$ for $i \in I^{**}$ and
+$\eta_i = 0$ for $i \notin I^{**}$.
+\end{proof}
 
 \begin{thebibliography}{}
 

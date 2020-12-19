@@ -1,0 +1,175 @@
+
+R version 4.0.3 (2020-10-10) -- "Bunny-Wunnies Freak Out"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(glmbb)
+> 
+> # Agresti, Categorical Data Analysis, third edition, 2013,
+> # Sec 6.5.1, Example 1
+> 
+> x <- seq(10, 90, 10)
+> x <- x[x != 50]
+> y <- as.numeric(x > 50)
+> 
+> eout <- efglm(y ~ x, family = "binomial")
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+             Length Class   Mode     
+formula      3      formula call     
+family       1      -none-  character
+is.lcm       1      -none-  logical  
+is.fixed.lcm 8      -none-  logical  
+gdor         2      -none-  numeric  
+> eout
+$formula
+y ~ x
+
+$family
+[1] "binomial"
+
+$is.lcm
+[1] TRUE
+
+$is.fixed.lcm
+[1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+
+$gdor
+[1] -1.250  0.025
+
+attr(,"class")
+[1] "efglm"
+> ## IGNORE_RDIFF_END
+> 
+> # check GDOR is correct
+> eta <- as.numeric(model.matrix(eout$formula) %*% eout$gdor)
+> identical(sign(eta), as.numeric(y == 1) - as.numeric(y == 0))
+[1] TRUE
+> 
+> # Agresti, Categorical Data Analysis, third edition, 2013,
+> # Sec 6.5.1, Example 2
+> 
+> x <- c(x, 50, 50)
+> y <- c(y, 0, 1)
+> 
+> eout <- efglm(y ~ x, family = "binomial")
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+             Length Class   Mode     
+formula       3     formula call     
+family        1     -none-  character
+is.lcm        1     -none-  logical  
+is.fixed.lcm 10     -none-  logical  
+gdor          2     -none-  numeric  
+> eout
+$formula
+y ~ x
+
+$family
+[1] "binomial"
+
+$is.lcm
+[1] TRUE
+
+$is.fixed.lcm
+ [1]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+
+$gdor
+[1] -1.250  0.025
+
+attr(,"class")
+[1] "efglm"
+> ## IGNORE_RDIFF_END
+> 
+> # check GDOR is correct
+> eta <- as.numeric(model.matrix(eout$formula) %*% eout$gdor)
+> identical(sign(zapsmall(eta)), as.numeric(x > 50) - as.numeric(x < 50))
+[1] TRUE
+> 
+> # Agresti, Categorical Data Analysis, third edition, 2013,
+> # Sec 6.5.2, Table 6.11
+> 
+> center <- rep(1:5, each = 2)
+> center <- as.factor(center)
+> treatment <- rep(c("active_drug", "placebo"), times = 5)
+> success <- c(0, 0, 1, 0, 0, 0, 6, 2, 5, 2)
+> failure <- c(5, 9, 12, 10, 7, 5, 3, 6, 9, 12)
+> y <- cbind(success, failure)
+> 
+> foo <- data.frame(center = rep(center, times = 2),
++     treatment = rep(treatment, times = 2), y = c(success, failure),
++     outcome = rep(c("success", "failure"), each = length(failure)))
+> foo <- transform(foo,
++     outcome = factor(outcome, levels = c("success", "failure")))
+> foo <- xtabs(y ~ center + treatment + outcome, foo)
+> names(dimnames(foo))
+[1] "center"    "treatment" "outcome"  
+> # X Y marginal
+> apply(foo, c(2, 3), sum)
+             outcome
+treatment     success failure
+  active_drug      12      36
+  placebo           4      42
+> # Y Z marginal
+> apply(foo, c(1, 3), sum)
+      outcome
+center success failure
+     1       0      14
+     2       1      22
+     3       0      12
+     4       8       9
+     5       7      21
+> # OK.  Checks with book.
+> 
+> eout <- efglm(y ~ center + treatment, family = "binomial")
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+             Length Class   Mode     
+formula       3     formula call     
+family        1     -none-  character
+is.lcm        1     -none-  logical  
+is.fixed.lcm 10     -none-  logical  
+gdor          6     -none-  numeric  
+> eout
+$formula
+y ~ center + treatment
+
+$family
+[1] "binomial"
+
+$is.lcm
+[1] TRUE
+
+$is.fixed.lcm
+ [1]  TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE
+
+$gdor
+[1] -1.000000e+00  1.000000e+00  1.000089e-12  1.000000e+00  1.000000e+00
+[6]  0.000000e+00
+
+attr(,"class")
+[1] "efglm"
+> ## IGNORE_RDIFF_END
+> 
+> # check GDOR is correct
+> eta <- as.numeric(model.matrix(eout$formula) %*% eout$gdor)
+> identical(sign(zapsmall(eta)), - as.numeric(center %in% c(1, 3)))
+[1] TRUE
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  1.414   0.715   1.085 

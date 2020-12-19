@@ -14,19 +14,19 @@
 \concept{direction of constancy}
 \description{
   Fit discrete exponential family generalized linear models (logistic 
-  regression or Poisson regression with log link or multinomial regression
-  with canonical link), correctly, even when 
+  regression or Poisson regression with log link or (product) multinomial
+  regression with canonical link), correctly, even when 
   the maximum likelihood estimate does not exist in the conventional sense.
   Log-linear models for categorical data analysis are also fit correctly
-  by considering them as Poisson regression.
+  by considering them as one of the above.
 }
 \usage{
-efglm(formula, data, family = c("poisson", "binomial", "multinomial"), ...)
+efglm(formula, data, family = c("poisson", "binomial", "multinomial"),
+    conditioning, tolerance = 1e-3, ...)
 }
 \arguments{
-  \item{formula}{an object of class \code{"\link[stats]{formula}"}
-    (or one that can be coerced to that class): a symbolic description of the
-    model to be fitted.
+  \item{formula}{an object of class \code{"\link[stats]{formula}"},
+    a symbolic description of the model to be fitted.
     See \code{\link[stats]{glm}} and \code{\link[stats]{formula}}
     for description of the R formula mini-language.}
 
@@ -34,11 +34,32 @@ efglm(formula, data, family = c("poisson", "binomial", "multinomial"), ...)
     \code{"poisson"} (default) or \code{"binomial"} or \code{"multinomial"}.
     May be abbreviated.}
 
-  \item{data}{an optional data frame, list or environment (or object
+  \item{data}{an optional data frame, list, or environment (or object
     coercible by \code{\link{as.data.frame}} to a data frame) containing
     the variables in the model.  If not found in \code{data}, the
     variables are taken from \code{environment(formula)},
     typically the environment from which this function is called.}
+
+  \item{conditioning}{a factor in the sense that
+     \code{as.factor(conditioning)} is used
+     (if not a factor, any type that has an \code{\link{as.character}} method),
+     which has the same length as the response and predictor variables.
+     Ignored unless \code{family = "multinomial"}.
+     May be missing, which indicates
+     multinomial conditioning: the sampling model is Poisson conditioned
+     on the sum of the response vector being equal to its observed value.
+     When not missing, indicates product multinomial conditioning:
+     the sampling model is Poisson conditioned on the sum of the response
+     vector over each level of the factor being equal to its observed value,
+     that is, if \code{y} is the response vector, then the elements of
+     \code{sum(split(y, conditioning))} are conditioned on being equal to
+     their observed values.}
+
+  \item{tolerance}{a number below which nonnegative quantities are considered
+     to be zero in determining whether the MLE exists in the original model
+     or in its Barndorff-Nielsen completion.  The very liberal default
+     works fine unless the model matrix is extremely ill-conditioned.
+     Must be strictly less than 1.0.}
 
   \item{...}{additional arguments passed to R function \code{\link[stats]{glm}}
     which is used to fit the limiting conditional model.}
@@ -55,8 +76,8 @@ efglm(formula, data, family = c("poisson", "binomial", "multinomial"), ...)
 
   An LCM can be thought of in two ways.  It is obtained by conditioning
   the OM as just described.  It is also obtained by taking limits in
-  the OM as parameters go to infinity.  See Geyer (2009) for further
-  description.
+  the OM as submodel canonical parameters (\dQuote{coefficients}) go
+  to infinity.  See Geyer (2009) for further description.
 
   This function detects whether the MLE is in the OM or in an LCM,
   determines which LCM (which components of the response vector
@@ -64,26 +85,50 @@ efglm(formula, data, family = c("poisson", "binomial", "multinomial"), ...)
 
   The function \code{\link{summary}} (i.e., \code{\link{summary.efglm}})
   can be used to obtain or print a summary of the results.
+
+  For multinomial and product multinomial, this function does not work
+  like other multinomial regression functions, for example,
+  \code{\link[nnet]{multinom}}.  Instead the response vector is just
+  a vector of counts, like in Poisson regression.  We actually fit
+  the Poisson model with \code{conditioning} added as a term on the
+  right-hand side of \code{formula} and then do not report the coefficients
+  for the levels of \code{conditioning} as these are not identifiable
+  if the sampling model is actually product multinomial.
+  If \code{conditioning} is missing, we actually fit the Poisson model with
+  an intercept added to \code{formula} if not present already and then
+  do not report the \code{(Intercept)} coefficient as it is not identifiable
+  if the sampling model is actually multinomial.
+
+  Adjustments are made to the output of R functions \code{\link{summary}},
+  \code{\link{anova}}, \code{\link{predict}}, \code{\link{vcov}}, and so
+  forth to account for the sampling being multinomial or product multinomial
+  rather than Poisson and also to account for the MLE being in a limiting
+  conditional model (if it is).
 }
 
 \value{
-  \code{efglm} returns an object of class inheriting from \code{"efglm"}
-  and from \code{"glm"}, which is a list containing the result of calling
-  R function \code{\link[stats]{glm}} to fit the LCM and, additionally
-  some or all of the following components:
+  \code{efglm} returns an object of class inheriting from \code{"efglm"},
+  which is a list containing at lest the following components:
  
+  \item{family}{argument \code{family}.}
+  \item{conditioning}{argument \code{conditioning}.}
   \item{is.lcm}{logical.  \code{TRUE} indicates that the MLE for the
       regression coefficients does not exist and the model fit is
       the LCM.  \code{FALSE} indicates that the MLE for the original
-      model does exist and the object returned is the model fit is the
-      original model.}
-  \item{is.zero.lcm}{a logical vector that says which components of
+      model does exist and the model fit is the original model.}
+  \item{is.fixed.lcm}{a logical vector that says which components of
       the response vector are conditioned to be equal to their observed
       values in the LCM.  Not present when component \code{is.lcm} is
       \code{FALSE}.}
-  T\item{gdor}{a generalized direction of recession (for which see
+  \item{gdor}{a generalized direction of recession (for which see
       Geyer, 2009).  Not present when component \code{is.lcm} is
       \code{FALSE}.}
+  \item{glm}{an object of class \code{"glm"}, the result of using
+      R function \code{\link{glm}} to fit the OM or LCM as the case
+      may be.}
+  \item{conditioning.coefficients}{names of coefficients of the \code{glm}
+      component that should not be reported because they are not identifiable
+      in a multinomial or product multinomial model.}
 }
 \seealso{
   \code{\link{summary.efglm}}, etc.
