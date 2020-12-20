@@ -10,7 +10,7 @@ S3method(summary, glmbb)
 importFrom(stats, lm, glm, terms, terms.formula, model.response)
 importFrom(stats, AIC, BIC, as.formula, poisson, update)
 importFrom(digest, digest)
-importFrom(Matrix, sparse.model.matrix)
+importFrom(Matrix, sparse.model.matrix, qr, qr.resid, cbind2)
 importFrom(methods, as, cbind2)
 importFrom(clpAPI, addColsCLP, chgObjCoefsCLP, chgRowLowerCLP,
     chgRowUpperCLP, getColPrimCLP, getObjValCLP, getSolStatusCLP,

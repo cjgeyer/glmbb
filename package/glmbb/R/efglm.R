@@ -48,11 +48,13 @@ efglm <- function(formula, data,
             is.matrix(response))
         if (is.vector(response)) {
             stopifnot(is.numeric(response))
+            stopifnot(length(response) == nrow(modmat))
             stopifnot(response %in% 0:1)
             n <- rep(1, length(response))
         }
         if (is.matrix(response)) {
             stopifnot(is.numeric(response))
+            stopifnot(nrow(response) == nrow(modmat))
             stopifnot(ncol(response) == 2)
             stopifnot(response == round(response))
             stopifnot(response >= 0)
@@ -60,6 +62,7 @@ efglm <- function(formula, data,
             response <- response[ , 1]
         }
         if (is.factor(response)) {
+            stopifnot(length(response) == nrow(modmat))
             n <- rep(1, length(response))
             response <- as.numeric(response != levels(response)[1])
         }
@@ -68,18 +71,23 @@ efglm <- function(formula, data,
     } else {
         # multinomial or product multinomial
         stopifnot(is.vector(response))
-        stopifnot(length(response) == nrow(modmat))
         stopifnot(is.numeric(response))
         stopifnot(is.finite(response))
         stopifnot(round(response) == response)
         stopifnot(response >= 0)
         tangent.direction <- as.numeric(response == 0)
-        if (! missing(conditioning))
-            modmat.cond <- sparse.model.matrix(~ conditioning, data)
-        else
-            modmat.cond <- sparse.model.matrix(~ 1, data)
-        modmat.save <- modmat
-        modmat <- cbind2(modmat.cond, modmat)
+        if (! missing(conditioning)) {
+            stopifnot(inherits(conditioning, "formula"))
+            modmat.conditioning <- sparse.model.matrix(conditioning, data)
+        } else {
+            modmat.conditioning <- sparse.model.matrix(~ 1, data)
+        }
+        qr.conditioning <- qr(modmat.conditioning)
+        foo <- qr.resid(qr.conditioning, modmat)
+        bar <- apply(foo^2, 2, sum)
+        modmat.formula <- modmat
+        modmat <- cbind2(modmat.conditioning,
+            modmat[ , bar > tolerance, drop = FALSE])
     }
 
     objgrd <- rbind(tangent.direction) %*% modmat
@@ -114,9 +122,16 @@ efglm <- function(formula, data,
         objgrd <- as(objgrd, "numeric")
         chgObjCoefsCLP(lp, objgrd)
     }
+
+    names(gdor) <- colnames(modmat)
+    # if (family == "multinomial") {
+    #     foo <- sparse.model.matrix(formula.multinomial, data)
+    #     gdor <- gdor[colnames(foo)]
+    # }
+
     foo <- list(formula = formula, family = family)
-    foo <- if (missing(conditioning)) foo else
-        c(foo, list(conditioning = conditioning))
+    if (! missing(conditioning))
+        foo <- c(foo, list(conditioning = conditioning))
     foo <- c(foo, if (any(is.boundary.lcm))
         list(is.lcm = TRUE, is.fixed.lcm = is.boundary.lcm, gdor = gdor) else
         list(is.lcm = FALSE))

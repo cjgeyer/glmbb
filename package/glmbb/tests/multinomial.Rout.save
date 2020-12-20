@@ -1,0 +1,428 @@
+
+R version 4.0.3 (2020-10-10) -- "Bunny-Wunnies Freak Out"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(CatDataAnalysis)
+> library(glmbb)
+> 
+> # Agresti, Categorical Data Analysis, third edition, 2013,
+> # Chapter 8, Data in Table 8.1
+> 
+> data(table_8.1)
+> d <- transform(table_8.1,
++     lake = factor(lake,
++         labels = c("Hancock", "Oklawaha", "Trafford", "George")),
++     gender = factor(gender, labels = c("Male", "Female")),
++     size = factor(size, labels = c("<=2.3", ">2.3")),
++     food = factor(food,
++         labels = c("Fish", "Invertebrate", "Reptile", "Bird", "Other")))
+> 
+> # models that give warnings are
+> #
+> # count ~ lake * gender * size + food * lake * (gender + size)
+> # count ~ lake * gender * size + food * (lake + gender + size)^2
+> #
+> # demo that
+> 
+> gout <- glm(count ~ lake * gender * size + food * lake * (gender + size),
++     family = poisson, data = d)
+Warning message:
+glm.fit: fitted rates numerically 0 occurred 
+> 
+> gout <- glm(count ~ lake * gender * size + food * (lake + gender + size)^2,
++     family = poisson, data = d)
+Warning message:
+glm.fit: fitted rates numerically 0 occurred 
+> 
+> # now for GDOR
+> 
+> eout <- efglm(count ~ food * (lake + gender + size)^2, data = d,
++     conditioning = ~ lake * gender * size, family = "multinomial")
+> 
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+             Length Class   Mode     
+formula       3     formula call     
+family        1     -none-  character
+conditioning  2     formula call     
+is.lcm        1     -none-  logical  
+is.fixed.lcm 80     -none-  logical  
+gdor         68     -none-  numeric  
+> eout
+$formula
+count ~ food * (lake + gender + size)^2
+
+$family
+[1] "multinomial"
+
+$conditioning
+~lake * gender * size
+
+$is.lcm
+[1] TRUE
+
+$is.fixed.lcm
+ [1] FALSE FALSE  TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE
+[13] FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE
+[25] FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE  TRUE FALSE  TRUE
+[37] FALSE  TRUE FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+[49] FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE  TRUE  TRUE
+[61] FALSE FALSE  TRUE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE
+[73] FALSE  TRUE FALSE FALSE FALSE  TRUE  TRUE FALSE
+
+$gdor
+                               (Intercept) 
+                              0.000000e+00 
+                              lakeOklawaha 
+                              0.000000e+00 
+                              lakeTrafford 
+                              0.000000e+00 
+                                lakeGeorge 
+                              0.000000e+00 
+                              genderFemale 
+                              0.000000e+00 
+                                  size>2.3 
+                              0.000000e+00 
+                 lakeOklawaha:genderFemale 
+                              0.000000e+00 
+                 lakeTrafford:genderFemale 
+                              0.000000e+00 
+                   lakeGeorge:genderFemale 
+                              0.000000e+00 
+                     lakeOklawaha:size>2.3 
+                              0.000000e+00 
+                     lakeTrafford:size>2.3 
+                              0.000000e+00 
+                       lakeGeorge:size>2.3 
+                              0.000000e+00 
+                     genderFemale:size>2.3 
+                              0.000000e+00 
+        lakeOklawaha:genderFemale:size>2.3 
+                             -1.000000e+00 
+        lakeTrafford:genderFemale:size>2.3 
+                             -1.000000e+00 
+          lakeGeorge:genderFemale:size>2.3 
+                              0.000000e+00 
+                          foodInvertebrate 
+                              0.000000e+00 
+                               foodReptile 
+                             -4.000000e+00 
+                                  foodBird 
+                             -1.000000e+00 
+                                 foodOther 
+                              0.000000e+00 
+             foodInvertebrate:lakeOklawaha 
+                              0.000000e+00 
+                  foodReptile:lakeOklawaha 
+                              3.000000e+00 
+                     foodBird:lakeOklawaha 
+                             -3.000000e+00 
+                    foodOther:lakeOklawaha 
+                              0.000000e+00 
+             foodInvertebrate:lakeTrafford 
+                              0.000000e+00 
+                  foodReptile:lakeTrafford 
+                              4.000000e+00 
+                     foodBird:lakeTrafford 
+                              3.000045e-12 
+                    foodOther:lakeTrafford 
+                              0.000000e+00 
+               foodInvertebrate:lakeGeorge 
+                              0.000000e+00 
+                    foodReptile:lakeGeorge 
+                              1.000000e+00 
+                       foodBird:lakeGeorge 
+                              1.000000e+00 
+                      foodOther:lakeGeorge 
+                              0.000000e+00 
+             foodInvertebrate:genderFemale 
+                              0.000000e+00 
+                  foodReptile:genderFemale 
+                              4.000000e+00 
+                     foodBird:genderFemale 
+                              1.000000e+00 
+                    foodOther:genderFemale 
+                              0.000000e+00 
+                 foodInvertebrate:size>2.3 
+                             -4.000000e+00 
+                      foodReptile:size>2.3 
+                              3.000000e+00 
+                         foodBird:size>2.3 
+                              1.000000e+00 
+                        foodOther:size>2.3 
+                              0.000000e+00 
+foodInvertebrate:lakeOklawaha:genderFemale 
+                              0.000000e+00 
+     foodReptile:lakeOklawaha:genderFemale 
+                             -3.000000e+00 
+        foodBird:lakeOklawaha:genderFemale 
+                              2.000000e+00 
+       foodOther:lakeOklawaha:genderFemale 
+                              0.000000e+00 
+foodInvertebrate:lakeTrafford:genderFemale 
+                              0.000000e+00 
+     foodReptile:lakeTrafford:genderFemale 
+                             -4.000000e+00 
+        foodBird:lakeTrafford:genderFemale 
+                             -3.000045e-12 
+       foodOther:lakeTrafford:genderFemale 
+                              0.000000e+00 
+  foodInvertebrate:lakeGeorge:genderFemale 
+                              0.000000e+00 
+       foodReptile:lakeGeorge:genderFemale 
+                             -1.000000e+00 
+          foodBird:lakeGeorge:genderFemale 
+                             -4.000000e+00 
+         foodOther:lakeGeorge:genderFemale 
+                              0.000000e+00 
+    foodInvertebrate:lakeOklawaha:size>2.3 
+                              4.000000e+00 
+         foodReptile:lakeOklawaha:size>2.3 
+                             -2.000000e+00 
+            foodBird:lakeOklawaha:size>2.3 
+                              2.000000e+00 
+           foodOther:lakeOklawaha:size>2.3 
+                             -3.000000e+00 
+    foodInvertebrate:lakeTrafford:size>2.3 
+                              4.000000e+00 
+         foodReptile:lakeTrafford:size>2.3 
+                             -3.000000e+00 
+            foodBird:lakeTrafford:size>2.3 
+                             -3.000045e-12 
+           foodOther:lakeTrafford:size>2.3 
+                              0.000000e+00 
+      foodInvertebrate:lakeGeorge:size>2.3 
+                              3.000000e+00 
+           foodReptile:lakeGeorge:size>2.3 
+                             -4.000000e+00 
+              foodBird:lakeGeorge:size>2.3 
+                             -1.000000e+00 
+             foodOther:lakeGeorge:size>2.3 
+                              0.000000e+00 
+    foodInvertebrate:genderFemale:size>2.3 
+                              1.000000e+00 
+         foodReptile:genderFemale:size>2.3 
+                             -3.000000e+00 
+            foodBird:genderFemale:size>2.3 
+                             -1.000000e+00 
+           foodOther:genderFemale:size>2.3 
+                              0.000000e+00 
+
+attr(,"class")
+[1] "efglm"
+> ## IGNORE_RDIFF_END
+> 
+> # check GDOR is correct
+> modmat.formula <- Matrix::sparse.model.matrix(eout$formula, data = d)
+> modmat.conditioning <- Matrix::sparse.model.matrix(eout$conditioning, data = d)
+> modmat <- cbind2(modmat.conditioning, modmat.formula)
+> modmat <- modmat[ , names(eout$gdor)]
+> eta <- as.numeric(modmat %*% eout$gdor)
+> # eta
+> all(eta < sqrt(.Machine$double.eps))
+[1] TRUE
+> all(eta >= - sqrt(.Machine$double.eps) | d$count == 0)
+[1] TRUE
+> 
+> # and the other formula
+> 
+> eout <- efglm(count ~ food * lake * (gender + size), data = d,
++     conditioning = ~ lake * gender * size, family = "multinomial")
+> 
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+             Length Class   Mode     
+formula       3     formula call     
+family        1     -none-  character
+conditioning  2     formula call     
+is.lcm        1     -none-  logical  
+is.fixed.lcm 80     -none-  logical  
+gdor         64     -none-  numeric  
+> eout
+$formula
+count ~ food * lake * (gender + size)
+
+$family
+[1] "multinomial"
+
+$conditioning
+~lake * gender * size
+
+$is.lcm
+[1] TRUE
+
+$is.fixed.lcm
+ [1] FALSE FALSE  TRUE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE
+[13] FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+[25] FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE
+[37] FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+[49] FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+[61] FALSE FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+[73] FALSE  TRUE FALSE FALSE FALSE  TRUE  TRUE FALSE
+
+$gdor
+                               (Intercept) 
+                              0.000000e+00 
+                              lakeOklawaha 
+                              0.000000e+00 
+                              lakeTrafford 
+                              0.000000e+00 
+                                lakeGeorge 
+                              0.000000e+00 
+                              genderFemale 
+                              0.000000e+00 
+                                  size>2.3 
+                              0.000000e+00 
+                 lakeOklawaha:genderFemale 
+                              0.000000e+00 
+                 lakeTrafford:genderFemale 
+                              0.000000e+00 
+                   lakeGeorge:genderFemale 
+                              0.000000e+00 
+                     lakeOklawaha:size>2.3 
+                              0.000000e+00 
+                     lakeTrafford:size>2.3 
+                              0.000000e+00 
+                       lakeGeorge:size>2.3 
+                              0.000000e+00 
+                     genderFemale:size>2.3 
+                              0.000000e+00 
+        lakeOklawaha:genderFemale:size>2.3 
+                              0.000000e+00 
+        lakeTrafford:genderFemale:size>2.3 
+                              0.000000e+00 
+          lakeGeorge:genderFemale:size>2.3 
+                              0.000000e+00 
+                          foodInvertebrate 
+                              0.000000e+00 
+                               foodReptile 
+                             -2.000000e+00 
+                                  foodBird 
+                              0.000000e+00 
+                                 foodOther 
+                              0.000000e+00 
+             foodInvertebrate:lakeOklawaha 
+                              0.000000e+00 
+                  foodReptile:lakeOklawaha 
+                              2.000000e+00 
+                     foodBird:lakeOklawaha 
+                             -2.000000e+00 
+                    foodOther:lakeOklawaha 
+                              0.000000e+00 
+             foodInvertebrate:lakeTrafford 
+                              0.000000e+00 
+                  foodReptile:lakeTrafford 
+                              2.000000e+00 
+                     foodBird:lakeTrafford 
+                              1.000000e-12 
+                    foodOther:lakeTrafford 
+                              0.000000e+00 
+               foodInvertebrate:lakeGeorge 
+                              0.000000e+00 
+                    foodReptile:lakeGeorge 
+                              1.000000e+00 
+                       foodBird:lakeGeorge 
+                              0.000000e+00 
+                      foodOther:lakeGeorge 
+                              0.000000e+00 
+             foodInvertebrate:genderFemale 
+                              0.000000e+00 
+                  foodReptile:genderFemale 
+                              2.000000e+00 
+                     foodBird:genderFemale 
+                              0.000000e+00 
+                    foodOther:genderFemale 
+                              0.000000e+00 
+                 foodInvertebrate:size>2.3 
+                             -2.000000e+00 
+                      foodReptile:size>2.3 
+                              0.000000e+00 
+                         foodBird:size>2.3 
+                              0.000000e+00 
+                        foodOther:size>2.3 
+                              0.000000e+00 
+foodInvertebrate:lakeOklawaha:genderFemale 
+                              0.000000e+00 
+     foodReptile:lakeOklawaha:genderFemale 
+                             -2.000000e+00 
+        foodBird:lakeOklawaha:genderFemale 
+                              1.000000e+00 
+       foodOther:lakeOklawaha:genderFemale 
+                              0.000000e+00 
+foodInvertebrate:lakeTrafford:genderFemale 
+                              0.000000e+00 
+     foodReptile:lakeTrafford:genderFemale 
+                             -2.000000e+00 
+        foodBird:lakeTrafford:genderFemale 
+                             -1.000000e-12 
+       foodOther:lakeTrafford:genderFemale 
+                              0.000000e+00 
+  foodInvertebrate:lakeGeorge:genderFemale 
+                              0.000000e+00 
+       foodReptile:lakeGeorge:genderFemale 
+                             -1.000000e+00 
+          foodBird:lakeGeorge:genderFemale 
+                             -2.000000e+00 
+         foodOther:lakeGeorge:genderFemale 
+                              0.000000e+00 
+    foodInvertebrate:lakeOklawaha:size>2.3 
+                              2.000000e+00 
+         foodReptile:lakeOklawaha:size>2.3 
+                              1.999956e-12 
+            foodBird:lakeOklawaha:size>2.3 
+                              1.000000e+00 
+           foodOther:lakeOklawaha:size>2.3 
+                             -2.000000e+00 
+    foodInvertebrate:lakeTrafford:size>2.3 
+                              2.000000e+00 
+         foodReptile:lakeTrafford:size>2.3 
+                              0.000000e+00 
+            foodBird:lakeTrafford:size>2.3 
+                             -1.000000e-12 
+           foodOther:lakeTrafford:size>2.3 
+                              0.000000e+00 
+      foodInvertebrate:lakeGeorge:size>2.3 
+                              2.000000e+00 
+           foodReptile:lakeGeorge:size>2.3 
+                             -1.000000e+00 
+              foodBird:lakeGeorge:size>2.3 
+                              0.000000e+00 
+             foodOther:lakeGeorge:size>2.3 
+                              0.000000e+00 
+
+attr(,"class")
+[1] "efglm"
+> ## IGNORE_RDIFF_END
+> 
+> # check GDOR is correct
+> modmat.formula <- Matrix::sparse.model.matrix(eout$formula, data = d)
+> modmat.conditioning <- Matrix::sparse.model.matrix(eout$conditioning, data = d)
+> modmat <- cbind2(modmat.conditioning, modmat.formula)
+> modmat <- modmat[ , names(eout$gdor)]
+> eta <- as.numeric(modmat %*% eout$gdor)
+> # eta
+> all(eta < sqrt(.Machine$double.eps))
+[1] TRUE
+> all(eta >= - sqrt(.Machine$double.eps) | d$count == 0)
+[1] TRUE
+> 
+> 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  1.677   0.664   1.295 
