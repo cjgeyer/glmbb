@@ -1,0 +1,157 @@
+
+R version 4.0.3 Patched (2021-01-13 r79827) -- "Bunny-Wunnies Freak Out"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(glmbb)
+> 
+> # Agresti, Categorical Data Analysis, third edition, 2013,
+> # Table 4.5
+> 
+> age <- rep(c("<55", ">=55"), times = 2)
+> valve <- rep(c("aortic", "mitral"), each = 2)
+> deaths <- c(4, 7, 1, 9)
+> time.at.risk <- c(1259, 1417, 2082, 1647)
+> 
+> data.frame(age, valve, deaths, time = time.at.risk)
+   age  valve deaths time
+1  <55 aortic      4 1259
+2 >=55 aortic      7 1417
+3  <55 mitral      1 2082
+4 >=55 mitral      9 1647
+> 
+> eout <- llmdr(deaths ~ age + valve, offset = log(time.at.risk),
++     family = "poisson")
+> ## IGNORE_RDIFF_BEGIN
+> summary(eout)
+> eout
+$formula
+deaths ~ age + valve
+
+$family
+[1] "poisson"
+
+$is.lcm
+[1] FALSE
+
+$glm
+$glm$coefficients
+(Intercept)     age>=55 valvemitral 
+ -6.3120974   1.2209481  -0.3298665 
+
+$glm$residuals
+         1          2          3          4 
+ 0.7512305 -0.1968693 -0.6317968  0.2355665 
+
+$glm$fitted.values
+       1        2        3        4 
+2.284108 8.715892 2.715892 7.284108 
+
+$glm$effects
+(Intercept)     age>=55 valvemitral             
+ 25.3825685  -2.4396538   0.7528365   1.7649754 
+
+$glm$R
+            (Intercept)   age>=55 valvemitral
+(Intercept)   -4.582576 -3.491486  -2.1821789
+age>=55        0.000000 -1.951800   0.1716054
+valvemitral    0.000000  0.000000  -2.2822460
+
+$glm$rank
+[1] 3
+
+$glm$qr
+$qr
+  (Intercept)    age>=55 valvemitral
+1  -4.5825758 -3.4914862  -2.1821789
+2   0.6442379 -1.9518002   0.1716054
+3   0.3596223 -0.4837664  -2.2822460
+4   0.5889502  0.5905193   0.9522653
+
+$rank
+[1] 3
+
+$qraux
+[1] 1.329799 1.645954 1.305272
+
+$pivot
+[1] 1 2 3
+
+$tol
+[1] 1e-11
+
+attr(,"class")
+[1] "qr"
+
+$glm$family
+
+Family: poisson 
+Link function: log 
+
+
+$glm$linear.predictors
+        1         2         3         4 
+0.8259757 2.1651480 0.9991204 1.9856950 
+
+$glm$deviance
+[1] 3.222511
+
+$glm$aic
+[1] 22.34946
+
+$glm$null.deviance
+[1] 8.23756
+
+$glm$iter
+[1] 5
+
+$glm$weights
+       1        2        3        4 
+2.284108 8.715892 2.715892 7.284108 
+
+$glm$prior.weights
+1 2 3 4 
+1 1 1 1 
+
+$glm$df.residual
+[1] 1
+
+$glm$df.null
+[1] 3
+
+$glm$y
+1 2 3 4 
+4 7 1 9 
+
+$glm$converged
+[1] TRUE
+
+$glm$boundary
+[1] FALSE
+
+
+attr(,"class")
+[1] "llmdr"
+> ## IGNORE_RDIFF_END
+> 
+> # Note that fitted values agree with Table 4.6 in Agresti
+> round(eout$glm$fitted.values, 2)
+   1    2    3    4 
+2.28 8.72 2.72 7.28 
+> 
+> proc.time()
+   user  system elapsed 
+  1.542   0.612   1.150 
