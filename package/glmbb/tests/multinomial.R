@@ -29,7 +29,7 @@ gout <- glm(count ~ lake * gender * size + food * (lake + gender + size)^2,
 
 # now for GDOR
 
-eout <- efglm(count ~ food * (lake + gender + size)^2, data = d,
+eout <- llmdr(count ~ food * (lake + gender + size)^2, data = d,
     conditioning = ~ lake * gender * size, family = "multinomial")
 
 ## IGNORE_RDIFF_BEGIN
@@ -49,7 +49,7 @@ all(eta >= - sqrt(.Machine$double.eps) | d$count == 0)
 
 # and the other formula
 
-eout <- efglm(count ~ food * lake * (gender + size), data = d,
+eout <- llmdr(count ~ food * lake * (gender + size), data = d,
     conditioning = ~ lake * gender * size, family = "multinomial")
 
 ## IGNORE_RDIFF_BEGIN

@@ -1,6 +1,6 @@
 
-R version 4.0.3 (2020-10-10) -- "Bunny-Wunnies Freak Out"
-Copyright (C) 2020 The R Foundation for Statistical Computing
+R version 4.0.3 Patched (2021-01-13 r79827) -- "Bunny-Wunnies Freak Out"
+Copyright (C) 2021 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -25,15 +25,9 @@ Type 'q()' to quit R.
 > x <- x[x != 50]
 > y <- as.numeric(x > 50)
 > 
-> eout <- efglm(y ~ x, family = "binomial")
+> eout <- llmdr(y ~ x, family = "binomial")
 > ## IGNORE_RDIFF_BEGIN
 > summary(eout)
-             Length Class   Mode     
-formula      3      formula call     
-family       1      -none-  character
-is.lcm       1      -none-  logical  
-is.fixed.lcm 8      -none-  logical  
-gdor         2      -none-  numeric  
 > eout
 $formula
 y ~ x
@@ -48,10 +42,11 @@ $is.fixed.lcm
 [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
 
 $gdor
-[1] -1.250  0.025
+(Intercept)           x 
+     -1.250       0.025 
 
 attr(,"class")
-[1] "efglm"
+[1] "llmdr"
 > ## IGNORE_RDIFF_END
 > 
 > # check GDOR is correct
@@ -65,15 +60,9 @@ attr(,"class")
 > x <- c(x, 50, 50)
 > y <- c(y, 0, 1)
 > 
-> eout <- efglm(y ~ x, family = "binomial")
+> eout <- llmdr(y ~ x, family = "binomial")
 > ## IGNORE_RDIFF_BEGIN
 > summary(eout)
-             Length Class   Mode     
-formula       3     formula call     
-family        1     -none-  character
-is.lcm        1     -none-  logical  
-is.fixed.lcm 10     -none-  logical  
-gdor          2     -none-  numeric  
 > eout
 $formula
 y ~ x
@@ -88,10 +77,104 @@ $is.fixed.lcm
  [1]  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
 
 $gdor
-[1] -1.250  0.025
+(Intercept)           x 
+     -1.250       0.025 
+
+$glm
+$glm$coefficients
+ (Intercept)            x 
+4.710277e-16           NA 
+
+$glm$residuals
+ 9 10 
+-2  2 
+
+$glm$fitted.values
+  9  10 
+0.5 0.5 
+
+$glm$effects
+  (Intercept)               
+-3.330669e-16  1.414214e+00 
+
+$glm$R
+            (Intercept)             x
+(Intercept)  -0.7071068 -3.535534e+01
+x             0.0000000  3.552714e-15
+
+$glm$rank
+[1] 1
+
+$glm$qr
+$qr
+   (Intercept)             x
+9   -0.7071068 -3.535534e+01
+10   0.7071068  3.552714e-15
+
+$rank
+[1] 1
+
+$qraux
+[1] 1.707107e+00 3.552714e-15
+
+$pivot
+[1] 1 2
+
+$tol
+[1] 1e-11
 
 attr(,"class")
-[1] "efglm"
+[1] "qr"
+
+$glm$family
+
+Family: binomial 
+Link function: logit 
+
+
+$glm$linear.predictors
+           9           10 
+4.710277e-16 4.710277e-16 
+
+$glm$deviance
+[1] 2.772589
+
+$glm$aic
+[1] 4.772589
+
+$glm$null.deviance
+[1] 2.772589
+
+$glm$iter
+[1] 2
+
+$glm$weights
+   9   10 
+0.25 0.25 
+
+$glm$prior.weights
+ 9 10 
+ 1  1 
+
+$glm$df.residual
+[1] 1
+
+$glm$df.null
+[1] 1
+
+$glm$y
+ 9 10 
+ 0  1 
+
+$glm$converged
+[1] TRUE
+
+$glm$boundary
+[1] FALSE
+
+
+attr(,"class")
+[1] "llmdr"
 > ## IGNORE_RDIFF_END
 > 
 > # check GDOR is correct
@@ -134,15 +217,9 @@ center success failure
      5       7      21
 > # OK.  Checks with book.
 > 
-> eout <- efglm(y ~ center + treatment, family = "binomial")
+> eout <- llmdr(y ~ center + treatment, family = "binomial")
 > ## IGNORE_RDIFF_BEGIN
 > summary(eout)
-             Length Class   Mode     
-formula       3     formula call     
-family        1     -none-  character
-is.lcm        1     -none-  logical  
-is.fixed.lcm 10     -none-  logical  
-gdor          6     -none-  numeric  
 > eout
 $formula
 y ~ center + treatment
@@ -157,11 +234,126 @@ $is.fixed.lcm
  [1]  TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE
 
 $gdor
-[1] -1.000000e+00  1.000000e+00  1.000089e-12  1.000000e+00  1.000000e+00
-[6]  0.000000e+00
+     (Intercept)          center2          center3          center4 
+   -1.000000e+00     1.000000e+00     1.000089e-12     1.000000e+00 
+         center5 treatmentplacebo 
+    1.000000e+00     0.000000e+00 
+
+$glm
+$glm$coefficients
+     (Intercept)          center2          center3          center4 
+      -0.4763235       -2.1802202               NA        1.0631266 
+         center5 treatmentplacebo 
+              NA       -1.5459963 
+
+$glm$residuals
+         3          4          7          8          9         10 
+ 0.1849751 -1.0149575  0.1046579 -0.1350040 -0.1099175  0.2516777 
+
+$glm$fitted.values
+         3          4          7          8          9         10 
+0.06558684 0.01473711 0.64263131 0.27703978 0.38312066 0.11687934 
+
+$glm$effects
+     (Intercept)          center2          center4 treatmentplacebo 
+       2.4668700        2.1375197       -1.2346356        2.2033593 
+                                  
+      -0.5519067        0.2357665 
+
+$glm$R
+                 (Intercept)    center2    center4 treatmentplacebo center3
+(Intercept)        -3.060218 -0.3077908 -1.1990051       -1.0432490       0
+center2             0.000000 -0.9204193  0.4009507        0.1911120       0
+center4             0.000000  0.0000000 -1.4390420       -0.1909761       0
+treatmentplacebo    0.000000  0.0000000  0.0000000       -1.4252035       0
+center3             0.000000  0.0000000  0.0000000        0.0000000       0
+center5             0.000000  0.0000000  0.0000000        0.0000000       0
+                       center5
+(Intercept)      -1.553422e+00
+center2           5.194686e-01
+center4           1.439042e+00
+treatmentplacebo -8.911933e-17
+center3           6.302007e-17
+center5          -2.229708e-16
+
+$glm$rank
+[1] 4
+
+$glm$qr
+$qr
+   (Intercept)    center2    center4 treatmentplacebo center3       center5
+3   -3.0602177 -0.3077908 -1.1990051       -1.0432490       0 -1.553422e+00
+4    0.1245173 -0.9204193  0.4009507        0.1911120       0  5.194686e-01
+7    0.4697947 -0.4743367 -1.4390420       -0.1909761       0  1.439042e+00
+8    0.4136385 -0.4176376  0.4964476       -1.4252035       0 -8.911933e-17
+9    0.5944011 -0.6001478 -0.5506348       -0.3460707       0  6.302007e-17
+10   0.3928173 -0.3966151 -0.3638938        0.6147579       0 -2.229708e-16
+
+$rank
+[1] 4
+
+$qraux
+[1] 1.291674e+00 1.288275e+00 1.563846e+00 1.708737e+00 0.000000e+00
+[6] 2.317056e-16
+
+$pivot
+[1] 1 2 4 6 3 5
+
+$tol
+[1] 1e-11
 
 attr(,"class")
-[1] "efglm"
+[1] "qr"
+
+$glm$family
+
+Family: binomial 
+Link function: logit 
+
+
+$glm$linear.predictors
+         3          4          7          8          9         10 
+-2.6565436 -4.2025399  0.5868032 -0.9591931 -0.4763235 -2.0223197 
+
+$glm$deviance
+[1] 0.5021362
+
+$glm$aic
+[1] 20.85865
+
+$glm$null.deviance
+[1] 16.96288
+
+$glm$iter
+[1] 5
+
+$glm$weights
+        3         4         7         8         9        10 
+0.7967077 0.1451992 2.0669068 1.6023099 3.3087491 1.4450598 
+
+$glm$prior.weights
+ 3  4  7  8  9 10 
+13 10  9  8 14 14 
+
+$glm$df.residual
+[1] 2
+
+$glm$df.null
+[1] 5
+
+$glm$y
+         3          4          7          8          9         10 
+0.07692308 0.00000000 0.66666667 0.25000000 0.35714286 0.14285714 
+
+$glm$converged
+[1] TRUE
+
+$glm$boundary
+[1] FALSE
+
+
+attr(,"class")
+[1] "llmdr"
 > ## IGNORE_RDIFF_END
 > 
 > # check GDOR is correct
@@ -172,4 +364,4 @@ attr(,"class")
 > 
 > proc.time()
    user  system elapsed 
-  1.414   0.715   1.085 
+  1.560   0.610   1.159 

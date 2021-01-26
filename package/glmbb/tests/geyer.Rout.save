@@ -1,6 +1,6 @@
 
-R version 4.0.3 (2020-10-10) -- "Bunny-Wunnies Freak Out"
-Copyright (C) 2020 The R Foundation for Statistical Computing
+R version 4.0.3 Patched (2021-01-13 r79827) -- "Bunny-Wunnies Freak Out"
+Copyright (C) 2021 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -25,7 +25,7 @@ Type 'q()' to quit R.
 > x <- 1:30
 > y <- ifelse(x <= 12 | x >= 24, 0, 1)
 > 
-> eout <- efglm(y ~ x + I(x^2), family = "binomial")
+> eout <- llmdr(y ~ x + I(x^2), family = "binomial")
 > ## IGNORE_RDIFF_BEGIN
 > summary(eout)
 > eout
@@ -47,7 +47,7 @@ $gdor
 -2.27093065  0.27868607 -0.00775542 
 
 attr(,"class")
-[1] "efglm"
+[1] "llmdr"
 > ## IGNORE_RDIFF_END
 > 
 > # check GDOR is correct
@@ -60,7 +60,7 @@ attr(,"class")
 > # Section 2.3
 > d <- read.table("catrec.txt", header = TRUE)
 > 
-> eout <- efglm(y ~ (.)^3, family = "poisson", data = d)
+> eout <- llmdr(y ~ (.)^3, family = "poisson", data = d)
 > ## IGNORE_RDIFF_BEGIN
 > summary(eout)
 > eout
@@ -2733,7 +2733,7 @@ $glm$boundary
 
 
 attr(,"class")
-[1] "efglm"
+[1] "llmdr"
 > ## IGNORE_RDIFF_END
 > 
 > # check GDOR is correct
@@ -2766,7 +2766,7 @@ attr(,"class")
 > # Section 2.4
 > d <- read.table("sports.txt", header = TRUE)
 > 
-> eout <- efglm(cbind(wins, losses) ~ 0 + ., data = d, family = "binomial")
+> eout <- llmdr(cbind(wins, losses) ~ 0 + ., data = d, family = "binomial")
 > ## IGNORE_RDIFF_BEGIN
 > summary(eout)
 > eout
@@ -2932,7 +2932,7 @@ $glm$boundary
 
 
 attr(,"class")
-[1] "efglm"
+[1] "llmdr"
 > ## IGNORE_RDIFF_END
 > 
 > # check GDOR is correct
@@ -2951,4 +2951,4 @@ attr(,"class")
 > 
 > proc.time()
    user  system elapsed 
-  1.486   0.686   1.134 
+  1.516   0.709   1.205 

@@ -8,7 +8,7 @@ x <- seq(10, 90, 10)
 x <- x[x != 50]
 y <- as.numeric(x > 50)
 
-eout <- efglm(y ~ x, family = "binomial")
+eout <- llmdr(y ~ x, family = "binomial")
 ## IGNORE_RDIFF_BEGIN
 summary(eout)
 eout
@@ -24,7 +24,7 @@ identical(sign(eta), as.numeric(y == 1) - as.numeric(y == 0))
 x <- c(x, 50, 50)
 y <- c(y, 0, 1)
 
-eout <- efglm(y ~ x, family = "binomial")
+eout <- llmdr(y ~ x, family = "binomial")
 ## IGNORE_RDIFF_BEGIN
 summary(eout)
 eout
@@ -57,7 +57,7 @@ apply(foo, c(2, 3), sum)
 apply(foo, c(1, 3), sum)
 # OK.  Checks with book.
 
-eout <- efglm(y ~ center + treatment, family = "binomial")
+eout <- llmdr(y ~ center + treatment, family = "binomial")
 ## IGNORE_RDIFF_BEGIN
 summary(eout)
 eout

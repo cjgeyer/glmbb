@@ -8,7 +8,7 @@ library(glmbb)
 x <- 1:30
 y <- ifelse(x <= 12 | x >= 24, 0, 1)
 
-eout <- efglm(y ~ x + I(x^2), family = "binomial")
+eout <- llmdr(y ~ x + I(x^2), family = "binomial")
 ## IGNORE_RDIFF_BEGIN
 summary(eout)
 eout
@@ -23,7 +23,7 @@ identical(sign(eta), as.numeric(y == 1) - as.numeric(y == 0))
 # Section 2.3
 d <- read.table("catrec.txt", header = TRUE)
 
-eout <- efglm(y ~ (.)^3, family = "poisson", data = d)
+eout <- llmdr(y ~ (.)^3, family = "poisson", data = d)
 ## IGNORE_RDIFF_BEGIN
 summary(eout)
 eout
@@ -41,7 +41,7 @@ d[zapsmall(eta) < 0, ]
 # Section 2.4
 d <- read.table("sports.txt", header = TRUE)
 
-eout <- efglm(cbind(wins, losses) ~ 0 + ., data = d, family = "binomial")
+eout <- llmdr(cbind(wins, losses) ~ 0 + ., data = d, family = "binomial")
 ## IGNORE_RDIFF_BEGIN
 summary(eout)
 eout

@@ -1,5 +1,5 @@
 
-efglm <- function(formula, data,
+llmdr <- function(formula, data,
     family = c("poisson", "binomial", "multinomial"),
     conditioning, tolerance = 1e-3, ...) {
 
@@ -185,13 +185,13 @@ efglm <- function(formula, data,
     }
     if (! all(is.boundary.lcm))
         foo <- c(foo, list(glm = gout))
-    class(foo) <- "efglm"
+    class(foo) <- "llmdr"
     return(foo)
 }
 
-summary.efglm <- function(object, ...) {
+summary.llmdr <- function(object, ...) {
 
-    stopifnot(inherits(object, "efglm"))
+    stopifnot(inherits(object, "llmdr"))
 
     invisible(NULL)
 }

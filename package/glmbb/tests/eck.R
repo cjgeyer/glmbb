@@ -8,7 +8,7 @@ library(glmbb)
 
 d <- read.table(gzfile("bigcategorical.txt.gz"), header = TRUE)
 
-eout <- efglm(y ~ 0 + (.)^4, family = "poisson", data = d)
+eout <- llmdr(y ~ 0 + (.)^4, family = "poisson", data = d)
 ## IGNORE_RDIFF_BEGIN
 summary(eout)
 eout
