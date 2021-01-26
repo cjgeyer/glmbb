@@ -261,9 +261,9 @@ Hence the solution is a DOR.  If the optimal value is zero, then the
 solution set is the null space of the model matrix, so the solution is a DOC,
 and an MLE does not exist in the OM.
 
-If a DOR $\delta$ exists that is not a DOC, then then we can rescale $\delta$
-so that its most negative component of $\eta = M \delta$ is equal to $-1$.
-For this $\delta$ the objective function is equal to $-1$.
+If a DOR $\delta$ exists that is not a DOC, then then we can rescale
+this $\delta$ so that some component of $\eta = M \delta$ is equal to $-1$.
+For this rescaled $\delta$ the objective function is less than or equal to $-1$.
 Hence the optimal value must be less than or equal to $-1$,
 and the solution must also be a DOR that is not a DOC.
 
@@ -318,7 +318,7 @@ If the optimal value is zero, then we have proved that no DOR $\delta$
 has $\eta = M \delta$ and $\eta_i < 0$ for some $i \in I^{{*}{*}{*}}$.
 
 If the optimal value is negative, then we can rescale the solution $\delta$
-so that its most negative component of $\eta = M \delta$ is equal to $-1$,
+so that some component of $\eta = M \delta$ is equal to $-1$,
 hence the optimal value must be less than or equal to $-1$.
 \end{proof}
 
@@ -563,7 +563,7 @@ $$
 $$
 \end{theorem}
 When $\mathcal{A} = \{I\}$ is the trivial partition, we say the sampling
-model is ``mulltinomial'' rather than ``product multinomial''.
+model is ``multinomial'' rather than ``product multinomial''.
 \begin{proof}
 The probability mass function (PMF) of the Poisson model is
 $$
@@ -625,9 +625,9 @@ And a vector $\delta$ is a DOC if and only if
 \begin{proof}
 The vector $\delta$ is a DOR if and only if $\inner{Y - y, \eta} \le 0$
 almost surely.  Define
-$$
+\begin{equation} \label{eq:zeta}
    \zeta_A = \max_{i \in A} \eta_i, \qquad A \in \mathcal{A}.
-$$
+\end{equation}
 Then
 \begin{align*}
    \inner{Y - y, \eta}
@@ -734,17 +734,16 @@ Let $H$ be the set of all such $\eta$ (one for each element of $I^{**}$).
 Then $\sum_{\eta \in H} \eta$ is in \eqref{eq:multinomial-gdor-b}.
 \end{proof}
 
-\REVISED
-
-\begin{theorem}
+\begin{theorem} \label{th:multinomial-detecting-and-fitting}
 Consider a Poisson GLM having response vector $Y$, mean value parameter
 vector $\mu$, canonical parameter vector $\theta$ given
 by $\theta_i = \log(\mu_i)$, $i \in I$, and model matrix $M$,
 and let $\mathcal{A}$ be a partition of $I$.
-Suppose the indicator vectors $u_A$ having components $u_{A, i}$ given by
-$$
-   u_{A, i} = \begin{cases} 1, & i \in A \\ 0 & i \in I \setminus A \end{cases}
-$$
+Suppose the indicator vectors $u_A$, $A \in \mathcal{A}$,
+having components $u_A(i)$ given by
+\begin{equation} \label{eq:multinomial-group-indicators}
+   u_A(i) = \begin{cases} 1, & i \in A \\ 0 & i \in I \setminus A \end{cases}
+\end{equation}
 are all in the column space of $M$.  Then the MLE mean value parameter
 vector of this Poisson GLM, if it exists,
 is equal to the MLE mean value parameter vector
@@ -754,7 +753,7 @@ if it exists, is also a (nonunique) MLE canonical parameter vector for
 this product multinomial model, when the same canonical parameterization
 is used for both models.
 
-When the MLE does not exist in Poisson GLM, any GDOR for this model
+When the MLE does not exist in the Poisson GLM, any GDOR for this model
 is also a GDOR for the product multinomial model,
 when the same canonical parameterization is used for both models.
 \end{theorem}
@@ -770,7 +769,97 @@ and~\ref{th:poisson-gdor} a vector $\delta$ is a GDOR for the Poisson GLM
 if and only if
 for $\eta = M \delta$ we have $\eta_i < 0$ for $i \in I^{**}$ and
 $\eta_i = 0$ for $i \notin I^{**}$.
+
+It is clear by Theorem~\ref{th:multinomial-gdor} that any such GDOR for
+the Poisson problem is also a GDOR for the multinomial problem if the
+sets $I^{**}$ defined by Theorems~\ref{th:poisson-gdor}
+and~\ref{th:multinomial-gdor} are the same.
+From theorems~\ref{th:poisson-dor} and~\ref{th:multinomial-dor} it is clear
+that every DOR for the Poisson problem is also a DOR for the multinomial
+problem.  Hence the set $I^{**}$ for the Poisson problem is a subset of
+the set $I^{**}$ for the multinomial problem.
+
+Conversely, suppose $\delta$ is a DOR for the multinomial problem
+and $\eta = M \delta$.  To say that $u_A$, $A \in \mathcal{A}$ are in the
+column space of $M$ is to say that each $u_A$ is a linear combination of
+the columns of $M$, or, what is equivalent, that there exist $\delta_A$,
+$A \in \mathcal{A}$ such that $u_A = M \delta_A$.
+Define $\zeta_A$, $A \in \mathcal{A}$ by \eqref{eq:zeta} and
+$$
+   \delta_\text{pois} = \delta - \sum_{A \in \mathcal{A}} \zeta_A \delta_A
+$$
+and
+$$
+   \eta_\text{pois} = M \delta_\text{pois}
+   = \eta - \sum_{A \in \mathcal{A}} \zeta_A u_A
+$$
+Then for each $A \in \mathcal{A}$ we have
+$$
+   \max_{i \in A} \eta_\text{pois}
+   =
+   \zeta_A - \zeta_A
+   =
+   0
+$$
+So $\eta_\text{pois}$ is a DOR for the Poisson problem.
+And $\eta_\text{pois}$ has negative components that are the same as the
+components of $\eta$ that were less than $\zeta_A$ for the $A$ that contains
+the index of that component.  This shows
+set $I^{**}$ for the multinomial problem is a subset of
+the set $I^{**}$ for the Poisson problem.
 \end{proof}
+
+\begin{theorem} \label{th:support}
+For Poisson sampling, if the set $I^{{*}{*}}$ defined
+in Theorem~\ref{th:poisson-gdor} is nonempty, then the LCM conditions
+on the event
+\begin{equation} \label{eq:support}
+   Y_i = y_i, \qquad i \in I^{{*}{*}}.
+\end{equation}
+For binomial sampling, if the set $I^{{*}{*}}$ defined
+in Theorem~\ref{th:binomial-gdor} is nonempty, then the LCM conditions
+on the event \eqref{eq:support}.
+For multinomial or product multinomial sampling with partition $\mathcal{A}$,
+if the set $I^{{*}{*}}$ defined
+in Theorem~\ref{th:multinomial-gdor} is nonempty,
+then the LCM conditions on the event \eqref{eq:support}.
+But, if we define
+$$
+   I^{{*}{*}{+}} = \bigcup \set{ A \in \mathcal{A} :
+   \text{$A \setminus I^{{*}{*}}$ is a singleton set}},
+$$
+then the LCM also conditions on the event
+$$
+   Y_i = y_i, \qquad i \in I^{{*}{*}} \cup I^{{*}{*}{+}}.
+$$
+\end{theorem}
+\begin{proof}
+If $\delta$ is a GDOR and $\eta = M \delta$, then the LCM conditions on
+the event $\inner{Y - y, \eta} = 0$, and in all cases this is equivalent
+to \eqref{eq:support}.  In the multinomial or product multinomial case
+if for some $A \in \mathcal{A}$ the event \eqref{eq:support} conditions
+$y_i = 0$ for all but one $i \in A$, then it also conditions $y_j = n_A$
+for the $j \in A$ such that $y_j \neq 0$.
+\end{proof}
+
+\section{Reporting Multinomial Model Fits}
+
+Theorem~\ref{th:multinomial-detecting-and-fitting} already tells us we can
+use the results of fitting a Poisson GLM or detecting whether a GDOR exists
+for a Poisson GLM to fit or detect whether a GDOR exists for a multinomial
+or product multinomial LLM.
+
+An issue remains.  The regression coefficients for the regressors $u_A$
+defined by \eqref{eq:multinomial-group-indicators} are not identifiable
+because each $u_A$ is a direction of constancy of the saturated model.
+Thus we do not report these coefficients.  They would not be coefficients
+if we were fitting the correct model (multinomial or product multinomial
+rather than Poisson).
+
+And another issue remains.  For the regression coefficients that we do report,
+standard errors, Fisher information, and inverse Fisher information should
+be based on the multinomial or product multinomial distribution rather than
+the Poisson distribution.
 
 \begin{thebibliography}{}
 
@@ -960,7 +1049,7 @@ Now we ignore all but the \code{lake + size} model
 xtabs(count ~ size + food + lake, data = table_8.1)
 @
 OK.  But we want to reorder the factor levels so it agrees with the book.
-<<model-ls-observed>>=
+<<model-ls-observed-too>>=
 table_8.1 <- transform(table_8.1, lake = factor(lake,
     levels = c("Hancock", "Oklawaha", "Trafford", "George")))
 table_8.1 <- transform(table_8.1, size = factor(size,
@@ -1076,4 +1165,5 @@ we have $Y^T \eta \le y^T \eta$ almost surely.
 \end{itemize}
 Thus for any direction of recession $\eta$ we must have all coordinates
 nonpositive, and we must have $\eta_j < 0$ implies $y_j = 0$.
+
 

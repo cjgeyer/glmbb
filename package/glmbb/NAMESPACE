@@ -7,10 +7,11 @@ export(tidy.formula.hierarchical)
 export(efglm)
 S3method(print, summary.glmbb)
 S3method(summary, glmbb)
-importFrom(stats, lm, glm, terms, terms.formula, model.response)
-importFrom(stats, AIC, BIC, as.formula, poisson, update)
+S3method(summary, efglm)
+importFrom(stats, lm, glm, terms, terms.formula, model.response, model.frame,
+    model.offset, glm.fit, AIC, BIC, as.formula, binomial, poisson, update)
 importFrom(digest, digest)
-importFrom(Matrix, sparse.model.matrix, qr, qr.resid, cbind2)
+importFrom(Matrix, sparse.model.matrix, qr, qr.resid, cbind2, as.matrix)
 importFrom(methods, as, cbind2)
 importFrom(clpAPI, addColsCLP, chgObjCoefsCLP, chgRowLowerCLP,
     chgRowUpperCLP, getColPrimCLP, getObjValCLP, getSolStatusCLP,

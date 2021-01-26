@@ -22,7 +22,7 @@
 }
 \usage{
 efglm(formula, data, family = c("poisson", "binomial", "multinomial"),
-    conditioning, tolerance = 1e-3, ...)
+    conditioning, tolerance = 1e-3, \dots) 
 }
 \arguments{
   \item{formula}{an object of class \code{"\link[stats]{formula}"},
@@ -61,8 +61,10 @@ efglm(formula, data, family = c("poisson", "binomial", "multinomial"),
      works fine unless the model matrix is extremely ill-conditioned.
      Must be strictly less than 1.0.}
 
-  \item{...}{additional arguments passed to R function \code{\link[stats]{glm}}
-    which is used to fit the limiting conditional model.}
+  \item{\dots}{additional arguments passed to R function
+    \code{\link[stats]{glm.fit}} which is used to fit the limiting
+    conditional model.  The most useful are perhaps \code{offset}
+    and \code{control}.}
 }
 \details{
   In an exponential family generalized linear model (GLM) the maximum

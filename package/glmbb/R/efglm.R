@@ -10,6 +10,10 @@ efglm <- function(formula, data,
     if (missing(data))
         data <- environment(formula)
 
+    stopifnot(is.numeric(tolerance))
+    stopifnot(length(tolerance) == 1)
+    stopifnot(tolerance > sqrt(.Machine$double.eps) && tolerance < 1)
+
     modmat <- sparse.model.matrix(formula, data)
 
     # for following, see R function glm and
@@ -24,6 +28,7 @@ efglm <- function(formula, data,
     mf <- eval.parent(mf)
     mt <- attr(mf, "terms")
     response <- model.response(mf, "numeric")
+    offset <- model.offset(mf)
 
     # for following, see writeup gdor.Rnw and efglm.Rnw
     # https://github.com/cjgeyer/glmbb/blob/master/devel/gdor.Rnw
@@ -59,6 +64,7 @@ efglm <- function(formula, data,
             stopifnot(response == round(response))
             stopifnot(response >= 0)
             n <- rowSums(response)
+            response.save <- response
             response <- response[ , 1]
         }
         if (is.factor(response)) {
@@ -79,15 +85,26 @@ efglm <- function(formula, data,
         if (! missing(conditioning)) {
             stopifnot(inherits(conditioning, "formula"))
             modmat.conditioning <- sparse.model.matrix(conditioning, data)
+            if (! all(modmat.conditioning@x == 1))
+                stop("argument conditioning does involve only factor variables")
         } else {
             modmat.conditioning <- sparse.model.matrix(~ 1, data)
         }
+        factor.conditioning <-
+            apply(modmat.conditioning, 1, paste, collapse = ":")
         qr.conditioning <- qr(modmat.conditioning)
         foo <- qr.resid(qr.conditioning, modmat)
         bar <- apply(foo^2, 2, sum)
         modmat.formula <- modmat
         modmat <- cbind2(modmat.conditioning,
             modmat[ , bar > tolerance, drop = FALSE])
+    }
+
+    # check offset
+    if (!is.null(offset)) {
+        stopifnot(is.numeric(offset))
+        stopifnot(is.finite(offset))
+        stopifnot(length(offset) == length(response))
     }
 
     objgrd <- rbind(tangent.direction) %*% modmat
@@ -124,18 +141,57 @@ efglm <- function(formula, data,
     }
 
     names(gdor) <- colnames(modmat)
-    # if (family == "multinomial") {
-    #     foo <- sparse.model.matrix(formula.multinomial, data)
-    #     gdor <- gdor[colnames(foo)]
-    # }
+
+    # adjust is.boundary.lcm in multinomial or product multinomial case
+    if (family == "multinomial") {
+        # if all but one component of a multinomial is zero,
+        # then that one component is also nonrandom, equal to multinomial
+        # sample size
+        foo <- split(! is.boundary.lcm, factor.conditioning)
+        bar <- sapply(foo, sum)
+        baz <- names(bar)[bar == 1]
+        is.boundary.lcm[factor.conditioning %in% baz] <- TRUE
+    }
+
+    # if (any(is.boundary.lcm)) then MLE is in LCM rather than OM
+    # if (all(is.boundary.lcm)) then LCM is trivial, concentrated at one point
+
+    if (! all(is.boundary.lcm)) {
+        # fit LCM
+        x <- as.matrix(modmat[! is.boundary.lcm, , drop = FALSE])
+        if (exists("response.save")) {
+            response <- response.save
+            y <- response[! is.boundary.lcm, , drop = FALSE]
+        } else {
+            y <- response[! is.boundary.lcm]
+        }
+        f <- if (family == "binomial") binomial() else poisson()
+        if (is.null(offset)) {
+            gout <- stats::glm.fit(x, y, family = f, ...)
+        } else {
+            offset <- offset[! is.boundary.lcm]
+            gout <- stats::glm.fit(x, y, family = f, offset = offset, ...)
+        }
+    }
 
     foo <- list(formula = formula, family = family)
     if (! missing(conditioning))
         foo <- c(foo, list(conditioning = conditioning))
-    foo <- c(foo, if (any(is.boundary.lcm))
-        list(is.lcm = TRUE, is.fixed.lcm = is.boundary.lcm, gdor = gdor) else
-        list(is.lcm = FALSE))
+    if (any(is.boundary.lcm)) {
+        foo <- c(foo, list(is.lcm = TRUE, is.fixed.lcm = is.boundary.lcm,
+            gdor = gdor))
+    } else {
+        foo <- c(foo, list(is.lcm = FALSE))
+    }
+    if (! all(is.boundary.lcm))
+        foo <- c(foo, list(glm = gout))
     class(foo) <- "efglm"
     return(foo)
 }
 
+summary.efglm <- function(object, ...) {
+
+    stopifnot(inherits(object, "efglm"))
+
+    invisible(NULL)
+}
