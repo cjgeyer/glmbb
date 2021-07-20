@@ -23,6 +23,8 @@
 
 \newcommand{\dorset}{N_{C_\text{sub}}(M^T y)}
 
+\DeclareMathOperator{\var}{var}
+
 \let\emptyset=\varnothing
 
 \newtheorem{theorem}{Theorem}
@@ -84,7 +86,7 @@ These functions only fit LLM.  There are no optional link functions.
 
 When no MLE exists in the original model (OM), this is detected
 and an MLE in the the Barndorff-Nielsen completion is determined.
-The object returned is a list having class \code{"efglm"}
+The object returned is a list having class \code{"llmdr"}
 that contains an object returned by R \code{glm} for the limiting conditional
 model (LCM) and at least the following components.
 \begin{itemize}
@@ -860,6 +862,21 @@ And another issue remains.  For the regression coefficients that we do report,
 standard errors, Fisher information, and inverse Fisher information should
 be based on the multinomial or product multinomial distribution rather than
 the Poisson distribution.
+
+Fisher information for canonical parameters is, of course, for the saturated
+model
+$$
+   I(\theta) = \var(Y) = n (P - p p^T)
+$$
+where $n$ is the sample size (number of observations, sum of $y$ values),
+$p$ is the probability vector $p_j$ is the probability that any particular
+individual is in the $j$-th category, and $P$ is the diagonal matrix whose
+diagonal is $p$.  Then Fisher information for the submodel is
+$$
+   I(\beta) = M^T I(\theta) M
+$$
+where $M$ is the model matrix for the submodel (for the coefficients we
+keep in the submodel, not the ones we throw away as explained above).
 
 \begin{thebibliography}{}
 

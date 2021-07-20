@@ -13,12 +13,10 @@
 \concept{direction of recession}
 \concept{direction of constancy}
 \description{
-  Fit discrete exponential family log-linear models (logistic 
-  regression or Poisson regression with log link or (product) multinomial
-  regression with canonical link), correctly, even when 
-  the maximum likelihood estimate does not exist in the conventional sense.
-  Log-linear models for categorical data analysis are also fit correctly
-  by considering them as one of the above.
+  Fit log-linear models: logistic regression, Poisson regression with log link,
+  multinomial response regression with canonical link.  When the maximum
+  likelihood estimate does not exist in the conventional sense, find the
+  maximum likelihood estimate in the Barndorff-Nielsen completion of the model.
 }
 \usage{
 llmdr(formula, data, family = c("poisson", "binomial", "multinomial"),
@@ -58,7 +56,7 @@ llmdr(formula, data, family = c("poisson", "binomial", "multinomial"),
   \item{tolerance}{a number below which nonnegative quantities are considered
      to be zero in determining whether the MLE exists in the original model
      or in its Barndorff-Nielsen completion.  The very liberal default
-     works fine unless the model matrix is extremely ill-conditioned.
+     works fine unless the model matrix is very ill-conditioned.
      Must be strictly less than 1.0.}
 
   \item{\dots}{additional arguments passed to R function

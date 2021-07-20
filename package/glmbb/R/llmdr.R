@@ -86,7 +86,7 @@ llmdr <- function(formula, data,
             stopifnot(inherits(conditioning, "formula"))
             modmat.conditioning <- sparse.model.matrix(conditioning, data)
             if (! all(modmat.conditioning@x == 1))
-                stop("argument conditioning does involve only factor variables")
+                stop("argument conditioning must involve only factor variables")
         } else {
             modmat.conditioning <- sparse.model.matrix(~ 1, data)
         }
