@@ -1,7 +1,6 @@
 
-llmdr <- function(formula, data,
-    family = c("poisson", "binomial", "multinomial"),
-    conditioning, tolerance = 1e-3, ...) {
+llmdr <- function(formula, family = c("poisson", "binomial", "multinomial"),
+    data, offset, conditioning, tolerance = 1e-3, ...) {
 
     family <- match.arg(family)
 
@@ -20,8 +19,7 @@ llmdr <- function(formula, data,
     # https://developer.r-project.org/model-fitting-functions.html
     cl <- match.call()
     mf <- match.call(expand.dots = FALSE)
-    m <- match(c("formula", "data", "subset", "na.action", "offset"),
-        names(mf), 0)
+    m <- match(c("formula", "data", "offset"), names(mf), 0)
     mf <- mf[c(1, m)]
     mf$drop.unused.levels <- TRUE
     mf[[1]] <- quote(stats::model.frame)

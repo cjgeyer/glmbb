@@ -61,9 +61,13 @@ multinomial log-linear models (R function \code{multinom} in
 R recommended package \code{nnet}).
 These are a special case of LLM, as the last synonym suggests.
 
+We call this function \code{llmdr} for ``log-linear models done right''
+which is a rip-off of the title of the book \emph{Linear Algebra Done Right}
+by Axler.
+
 Because we only handle exponential family GLM and LLM there is no
 choice of link function allowed.  Only the canonical link function
-that make each model an exponential family is used.  Thus the
+that makes such a model an exponential family is used.  Thus the
 family can only be specified by a character string,
 \code{"poisson"}, \code{"binomial"}, or \code{"multinomial"}.
 

@@ -19,8 +19,8 @@
   maximum likelihood estimate in the Barndorff-Nielsen completion of the model.
 }
 \usage{
-llmdr(formula, data, family = c("poisson", "binomial", "multinomial"),
-    conditioning, tolerance = 1e-3, \dots) 
+llmdr(formula, family = c("poisson", "binomial", "multinomial"), data,
+    offset, conditioning, tolerance = 1e-3, \dots)
 }
 \arguments{
   \item{formula}{an object of class \code{"\link[stats]{formula}"},
@@ -38,9 +38,14 @@ llmdr(formula, data, family = c("poisson", "binomial", "multinomial"),
     variables are taken from \code{environment(formula)},
     typically the environment from which this function is called.}
 
-  \item{conditioning}{a factor in the sense that
-     \code{as.factor(conditioning)} is used
-     (if not a factor, any type that has an \code{\link{as.character}} method),
+  \item{offset}{an optional numeric vector whose length is the same as
+    the response vector.  The constant term in the model equation; see
+    under \sQuote{Details}.  One or more \code{\link{offset}} terms
+    can be included in the formula instead or as well, and if more than
+    one is specified their sum is used.  See \code{\link{model.offset}}.}
+
+  \item{conditioning}{a formula involving only categorical variables
+     (type \code{"factor"} or type \code{"character"})
      which has the same length as the response and predictor variables.
      Ignored unless \code{family = "multinomial"}.
      May be missing, which indicates
@@ -48,10 +53,8 @@ llmdr(formula, data, family = c("poisson", "binomial", "multinomial"),
      on the sum of the response vector being equal to its observed value.
      When not missing, indicates product multinomial conditioning:
      the sampling model is Poisson conditioned on the sum of the response
-     vector over each level of the factor being equal to its observed value,
-     that is, if \code{y} is the response vector, then the elements of
-     \code{sum(split(y, conditioning))} are conditioned on being equal to
-     their observed values.}
+     vector over each equivalence class of the formula being equal to its
+     observed value, see under \sQuote{Details}.}
 
   \item{tolerance}{a number below which nonnegative quantities are considered
      to be zero in determining whether the MLE exists in the original model
@@ -104,12 +107,24 @@ llmdr(formula, data, family = c("poisson", "binomial", "multinomial"),
   forth to account for the sampling being multinomial or product multinomial
   rather than Poisson and also to account for the MLE being in a limiting
   conditional model (if it is).
+
+  If \eqn{\beta}{beta} is the \dQuote{coefficients} vector, \eqn{M} is the
+  model matrix, \eqn{a} is the offset vector, and \eqn{\theta}{theta} is
+  the saturated model canonical parameter vector (what is called
+  the \dQuote{linear predictor} in GLM parlance),
+  then \deqn{\theta = a + M \beta}{theta = a + M beta}.
+
+  The model matrix corresponding to argument \code{conditioning}
+  must have zero-or-one-valued components, and the \emph{equivalence
+  classes} of this model matrix are the sets of row indices for which the
+  rows are the same.  The sampling model conditions on the sums of the
+  response vector over these equivalence classes.
 }
 
 \value{
   \code{llmdr} returns an object of class inheriting from \code{"llmdr"},
   which is a list containing at lest the following components:
- 
+
   \item{family}{argument \code{family}.}
   \item{conditioning}{argument \code{conditioning}.}
   \item{is.lcm}{logical.  \code{TRUE} indicates that the MLE for the
